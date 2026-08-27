@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neuroam"
+version = "0.1.0"
+description = "Config-driven multiscale Admittance Method + NEURON pipeline (NeuroAM Studio)"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+neuron = ["neuron>=8.2"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+neuroam = "neuroam.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["neuroam*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

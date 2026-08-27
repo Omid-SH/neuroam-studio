@@ -1,0 +1,23 @@
+{
+  "neuroam": "0.1",
+  "name": "legacy_run",
+  "model": {
+    "legacy_in": "REPLACE/path/to/Model.in",
+    "mrm": "REPLACE/path/to/Model.mrm  (optional - delete this line for uniform)"
+  },
+  "materials": {"inline": []},
+  "waveforms": {
+    "stim": {"type": "cur_file", "path": "REPLACE/path/to/Cur1.cur"}
+  },
+  "solve": {"method": "cg", "rtol": 1e-8, "precond": "diag", "cache": true},
+  "outputs": {
+    "dir": "results_legacy_run",
+    "save": ["npz", "png", "vof", "vavg"],
+    "slices": [{"axis": "z"}],
+    "rois": []
+  },
+  "neuron": {
+    "coordinates": "REPLACE/path/to/coordinates_x_y_z.txt (optional - delete the whole neuron block if unused)",
+    "unit_scale": 1e3
+  }
+}

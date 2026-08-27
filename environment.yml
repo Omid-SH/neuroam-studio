@@ -1,0 +1,12 @@
+name: neuroam
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.10
+  - numpy>=1.24
+  - scipy>=1.10
+  - matplotlib>=3.7
+  - pytest
+  - pip
+  - pip:
+      - neuron>=8.2   # optional; comment out on platforms without wheels

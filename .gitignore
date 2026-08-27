@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.neuroam_cache/
+examples/out/
+results_*/
+neuroam_out_*/
+*.egg-info/
+build/
+dist/

@@ -1,0 +1,37 @@
+{
+  "neuroam": "0.1",
+  "name": "sphere_demo",
+  "model": {
+    "world": [40, 40, 40],
+    "unit_voxel_m": 1e-4,
+    "background": 1,
+    "shapes": [
+      {"type": "sphere", "material": 2, "center": [20, 20, 20], "radius": 10}
+    ]
+  },
+  "materials": {
+    "inline": [
+      {"id": 1, "sigma": 1.5, "name": "saline"},
+      {"id": 2, "sigma": 0.1, "name": "tissue sphere"}
+    ]
+  },
+  "electrodes": [
+    {"name": "stim", "role": "source", "material": 101, "waveform": "pulse",
+     "shape": {"type": "box", "corner": [18, 18, 0], "size": [4, 4, 1]},
+     "node": [20, 20, 0]},
+    {"name": "ret", "role": "ground", "material": 100,
+     "shape": {"type": "box", "corner": [18, 18, 39], "size": [4, 4, 1]},
+     "node": [20, 20, 40]}
+  ],
+  "waveforms": {
+    "pulse": {"type": "biphasic", "amp_A": 1e-3, "pulse_width_s": 1e-3,
+              "period_s": 10e-3, "n_pulses": 2, "dt_s": 1e-4, "ratio": 1.0}
+  },
+  "solve": {"method": "auto", "rtol": 1e-8, "cache": true},
+  "outputs": {
+    "dir": "results_sphere_demo",
+    "save": ["npz", "png", "vof"],
+    "slices": [{"axis": "z", "index": 20}, {"axis": "x", "index": 20}],
+    "rois": [{"name": "sphere", "labels": [2]}]
+  }
+}
