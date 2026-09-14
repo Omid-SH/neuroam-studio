@@ -1,0 +1,29 @@
+loading crops ...
+  reference electrode voxels: {101: 1144, 102: 1888, 110: 3936}
+  raw model electrode voxels: {101: 0, 102: 0, 110: 0}
+  voxels differing ref vs raw: 6,968 (electrode voxels: 6,968)
+
+[B] replay reproduces reference exactly: True
+[C] CL_stim (101)      dice 0.8933  gen  1256 / ref  1144
+[C] J_ground (102)     dice 0.9748  gen  1920 / ref  1888
+[C] insulation (110)   dice 0.9524  gen  4128 / ref  3936
+
+shared nodes: stim (72, 69, 58) (full (np.int64(302), np.int64(359), np.int64(208))), gnd (129, 103, 126)
+
+solving ...
+  [A] 6,440,160 unknowns, 44,871,668 nnz
+  [A] 47 iters, residual 3.02e-08, 146s, KCL 3.0e-08
+  [C] 6,440,160 unknowns, 44,871,668 nnz
+  [C] 46 iters, residual 3.32e-08, 160s, KCL 3.3e-08
+
+--- retinal dose (per 1 A injected) ---
+  A_reference    E_mean 1.823e+04 V/m   J_mean 1.823e+05 A/m²   E_p95 3.028e+04
+  C_parametric   E_mean 1.884e+04 V/m   J_mean 1.884e+05 A/m²   E_p95 3.224e+04
+
+--- |J| agreement vs reference ---
+  C_parametric   retina                 rel-L2 1.315e-01  r=0.947641  mean ratio 1.0336
+  C_parametric   vitreous               rel-L2 1.710e+01  r=0.232346  mean ratio 1.4798
+  C_parametric   eye (retina+vitreous)  rel-L2 2.229e+00  r=0.381794  mean ratio 1.1276
+  C_parametric   whole crop (tissue)    rel-L2 2.940e+00  r=0.333319  mean ratio 1.1153
+
+wrote /root/neuroam/studio/samples/ratcc_eye_83um/verification/verification_report.json and fields.npz

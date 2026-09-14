@@ -75,3 +75,68 @@ def save_vm_traces(path, t_ms: np.ndarray, vm_mV: np.ndarray,
     fig.savefig(path)
     plt.close(fig)
     return Path(path)
+
+
+def save_vm_comparison(path, traces: dict, title: str = "membrane potential",
+                       xlabel: str = "time (ms)", ylabel: str = "Vm (mV)",
+                       ax=None):
+    """Overlay several *named, single-segment* Vm(t) traces on one axes --
+    e.g. the same soma under different drives (single pulse vs. pulse
+    train vs. a zero-drive control), rather than ``save_vm_traces``'s many
+    segments of *one* run. ``traces`` maps a legend label to a
+    ``(t_ms, vm_mV)`` pair (each 1-D). Pass ``ax`` to draw into an existing
+    subplot (e.g. building a composite figure) instead of saving standalone
+    -- ``path`` is then ignored and the caller owns saving the figure."""
+    standalone = ax is None
+    if standalone:
+        fig, ax = plt.subplots(figsize=(7, 4), dpi=130)
+    for label, (t, v) in traces.items():
+        ax.plot(t, v, lw=1.1, label=label)
+    ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.legend(fontsize=8, loc="best")
+    ax.grid(alpha=0.3)
+    if standalone:
+        fig.tight_layout()
+        fig.savefig(path)
+        plt.close(fig)
+        return Path(path)
+    return ax
+
+
+def save_dose_response(path, series: dict, title: str = "dose-response",
+                       xlabel: str = "amplitude (uA)", ylabel: str = "peak deviation (mV)",
+                       xlog: bool = True, ylog: bool = False,
+                       spike_markers: Optional[dict] = None, ax=None):
+    """A log-x amplitude sweep with one or more named series.
+
+    ``series`` maps a legend label to an ``(x, y)`` pair (matched
+    amplitude and response arrays, e.g. one condition's dose-response
+    curve). ``spike_markers``, if given, maps the same labels to an ``x``
+    value to mark with a star (e.g. the lowest amplitude that produced a
+    spike) -- drawn on top of that series' own line/color. Pass ``ax`` to
+    draw into an existing subplot instead of saving standalone."""
+    standalone = ax is None
+    if standalone:
+        fig, ax = plt.subplots(figsize=(6, 4.5), dpi=130)
+    for label, (x, y) in series.items():
+        line, = ax.plot(x, y, marker="o", ms=4, lw=1.3, label=label)
+        if spike_markers and label in spike_markers:
+            xm = spike_markers[label]
+            ym = np.interp(xm, x, y) if xm <= max(x) else max(y)
+            ax.plot([xm], [ym], marker="*", ms=14, mec="black",
+                   mfc=line.get_color(), zorder=5)
+    if xlog:
+        ax.set_xscale("log")
+    if ylog:
+        ax.set_yscale("log")
+    ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.legend(fontsize=8, loc="best")
+    ax.grid(alpha=0.3, which="both")
+    if standalone:
+        fig.tight_layout()
+        fig.savefig(path)
+        plt.close(fig)
+        return Path(path)
+    return ax

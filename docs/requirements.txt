@@ -1,0 +1,14 @@
+# Docs-only build environment (Read the Docs installs this, isolated from
+# the package's own runtime deps in pyproject.toml). Deliberately excludes
+# neuron/pyvista/plotly/pyamg -- see conf.py's autodoc_mock_imports and
+# docstring for why the API reference builds fine without them.
+sphinx>=7.0
+myst-parser>=2.0
+sphinx-rtd-theme>=2.0
+sphinxcontrib-mermaid>=0.9
+
+# so autodoc can import the package itself (numpy/scipy are neuroam's own
+# non-optional runtime deps; matplotlib backs neuroam.viz)
+numpy>=1.24
+scipy>=1.10
+matplotlib>=3.7

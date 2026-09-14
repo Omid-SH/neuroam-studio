@@ -64,6 +64,54 @@ def transform_coordinates(coords: np.ndarray,
     return c + np.asarray(translate, dtype=float)
 
 
+def rotation_between_vectors(a: Sequence[float], b: Sequence[float]) -> np.ndarray:
+    """3x3 rotation matrix mapping unit vector ``a`` onto unit vector ``b``
+    (Rodrigues' formula) — the minimal rotation that does this and nothing
+    more; the rotation *about* the resulting axis ("roll") is left
+    unconstrained, since aligning two vectors alone can't determine it.
+
+    This is how to anatomically orient a morphology rather than just place
+    it: e.g. align a retinal ganglion cell's own soma-to-dendrite axis (see
+    :func:`neuroam.morphology.estimate_depth_axis`) to the local radial
+    direction of the eye at wherever it's being registered, so the
+    dendrite-to-axon axis ends up perpendicular to the retina there,
+    whatever the local surface angle is — not just translated in with
+    whatever orientation the source reconstruction happened to have.
+    """
+    a = np.asarray(a, dtype=float); a = a / np.linalg.norm(a)
+    b = np.asarray(b, dtype=float); b = b / np.linalg.norm(b)
+    v = np.cross(a, b)
+    c = float(np.dot(a, b))
+    s = np.linalg.norm(v)
+    if s < 1e-10:
+        if c > 0:
+            return np.eye(3)
+        # antiparallel: 180 deg about any axis perpendicular to a
+        perp = np.array([1.0, 0.0, 0.0]) if abs(a[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+        axis = np.cross(a, perp)
+        axis = axis / np.linalg.norm(axis)
+        K = np.array([[0, -axis[2], axis[1]],
+                     [axis[2], 0, -axis[0]],
+                     [-axis[1], axis[0], 0]])
+        return np.eye(3) + 2 * (K @ K)
+    K = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    return np.eye(3) + K + K @ K * ((1 - c) / (s ** 2))
+
+
+def place_aligned(coords: np.ndarray, local_axis: Sequence[float],
+                  target_axis: Sequence[float], target_point: Sequence[float],
+                  pivot: Optional[Sequence[float]] = None) -> np.ndarray:
+    """Rotate ``coords`` (about ``pivot``, default centroid) so
+    ``local_axis`` aligns with ``target_axis``, then translate ``pivot`` to
+    ``target_point``. Both axes and points are in whatever units ``coords``
+    already is (this project uses this in micrometers, then divides by
+    ``dx_um`` afterward, matching :func:`get_segment_coordinates`)."""
+    c = np.asarray(coords, dtype=float)
+    p = np.asarray(pivot, dtype=float) if pivot is not None else c.mean(axis=0)
+    R = rotation_between_vectors(local_axis, target_axis)
+    return (c - p) @ R.T + np.asarray(target_point, dtype=float)
+
+
 # ----------------------------------------------------------------- sampling
 def sample_node_grid(grid: np.ndarray, coords: np.ndarray,
                      outside: str = "clip") -> np.ndarray:

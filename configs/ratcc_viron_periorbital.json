@@ -1,0 +1,171 @@
+{
+  "neuroam": "0.2",
+  "name": "ratcc_viron_periorbital",
+  "montage": "VIRON_periorbital",
+  "_source": "Rat analogue of the VIRON rtACS intervention. Schittkowski M, Pohlner J, Mercieca K, et al. BMJ Open 2025;15:e091705 (doi 10.1136/bmjopen-2024-091705), DRKS00029129. Protocol: 'The stimulation will be performed via two electrodes positioned on the periorbital skin using a fixed frequency of 10 Hz and an intensity of 600 uA alternating current (peak-to-peak, sinusoidal waveform) with eyes open'; group 1 uses 'two electrodes fixed at the temples'. VIRON states NO electrode size or material -- the 10 mm cup comes from the montage it cites (Gall C, et al. PLoS ONE 2016;11:e0156134: four 10 mm Grass gold cups, two per eye, on the skin near the orbital cavity, used one at a time, return a 32 x 30 mm stainless plate on the right arm) and from the same group's phosphene study (Hunold A, et al. Life 2025;15:820: six 10 mm Ag/AgCl cups around the orbit, counter at temple C1 or vertex C2). See docs/CLINICAL_ELECTRODES.md",
+  "_orientation": "EYE-FRAME AZIMUTH CONVENTION (derived from this model, 2026-09-01). phi is measured about the corneal axis from +e1. On RatCC the fitted frame is e1 = (0.5, -0.5, 0.7071), e2 = (-0.5, 0.5, 0.7071), e3 = (-0.7071, -0.7071, 0), so phi = 45 deg is exactly +z and phi = 225 deg is -z. Radial tissue profiles from the globe centre: phi = 45 deg leaves muscle at 5.9 mm, crosses ~1 mm of skin (13) and reaches air -> SUPERIOR (dorsal); phi = 225 deg stays in muscle/fat past 7.6 mm with no skin -> INFERIOR (ventral, into the masseter); phi = 135 deg reaches skin at 5.1 mm -> NASAL/ROSTRAL (toward the snout); phi = 315 deg runs through fat and bone with no skin exit -> TEMPORAL/CAUDAL (toward the midline and braincase), which is also where the optic nerve leans (label 24 centroid at theta = 171 deg, phi = 323 deg). CONFIRM on the full 912x900x504 head model before publishing.",
+  "_crop": "CROP LIMIT -- the 180x160x220 (15 x 13 x 18 mm) eye crop carries periorbital skin only for phi ~ 330..225 deg through 0 and 180; the inferior/temporal sector (phi 240-315 deg) runs out of the crop, and there is no forehead, temple or trunk in it at all. Contacts marked CROP STAND-IN are placed where the crop allows, not where the clinical protocol puts them; electrodes with skip_if_missing are dropped with a warning when the model has no landing site. Re-run against the full head model for publication numbers.",
+  "model": {
+    "legacy_in": "../samples/ratcc_eye_83um/RatCC_eye_180_160_220_83um_with_retina.in",
+    "relabel": {
+      "101": 66,
+      "102": 12,
+      "110": 9
+    },
+    "_comment": "strip the lab montage's own hardware before placing a clinical analogue: 101 = contact-lens ring -> cornea, 102 = J return -> periorbital fat, 110 = its insulation -> muscle"
+  },
+  "materials": {
+    "inline": []
+  },
+  "frames": {
+    "eye": {
+      "type": "eye",
+      "retina_labels": [
+        77
+      ],
+      "_comment": "origin = least-squares centre of the retina shell, +e3 = corneal axis. RatCC 83 um crop: centre (89.00, 85.00, 91.00) vox, globe radius 3.155 mm (sphere-fit RMS 48 um); outer ocular surface 3.36 mm; limbus, the cornea(66)/sclera(33) crossover on the outer shell, at theta = 74 deg -> corneal chord radius 3.23 mm, i.e. a 6.5 mm cornea."
+    }
+  },
+  "electrodes": [
+    {
+      "name": "E_sup",
+      "role": "source",
+      "label": 121,
+      "terminal": "supernode",
+      "waveform": "rtACS",
+      "overwrite": [
+        0,
+        13
+      ],
+      "min_voxels": 150,
+      "geometry": {
+        "type": "cylinder",
+        "radius_mm": 1.3,
+        "height_mm": 1.0,
+        "frame": "eye",
+        "at": {
+          "theta_deg": 85.0,
+          "phi_deg": 45.0,
+          "on_surface": {
+            "labels": [
+              13
+            ],
+            "standoff_mm": 0.0,
+            "max_mm": 14.0
+          }
+        },
+        "conform": {
+          "labels": [
+            13
+          ],
+          "offset_mm": -0.1,
+          "thickness_mm": 0.3
+        },
+        "_comment": "supraorbital cup: 2.6 mm diameter = a 10 mm clinical cup scaled by the globe-radius ratio 3.155/12.0 = 0.263 || surface pad: a cylinder of the electrode diameter is landed on the skin along (theta, phi) and draped onto a 0.30 mm shell spanning -0.10..+0.20 mm about the skin surface -- the contact plus the ~0.1 mm of stratum corneum that conductive paste shorts out. overwrite [0, 13] lets it take air and skin and nothing else."
+      }
+    },
+    {
+      "name": "RET",
+      "role": "ground",
+      "label": 122,
+      "terminal": "supernode",
+      "overwrite": [
+        0,
+        13
+      ],
+      "min_voxels": 300,
+      "geometry": {
+        "type": "cylinder",
+        "radius_mm": 2.6,
+        "height_mm": 1.0,
+        "frame": "eye",
+        "at": {
+          "theta_deg": 85.0,
+          "phi_deg": 165.0,
+          "on_surface": {
+            "labels": [
+              13
+            ],
+            "standoff_mm": 0.0,
+            "max_mm": 14.0
+          }
+        },
+        "conform": {
+          "labels": [
+            13
+          ],
+          "offset_mm": -0.1,
+          "thickness_mm": 0.3
+        },
+        "_comment": "distant return -- CROP STAND-IN for the temple / 32 x 30 mm arm plate; placed at the farthest single-piece landing the crop allows || surface pad: a cylinder of the electrode diameter is landed on the skin along (theta, phi) and draped onto a 0.30 mm shell spanning -0.10..+0.20 mm about the skin surface -- the contact plus the ~0.1 mm of stratum corneum that conductive paste shorts out. overwrite [0, 13] lets it take air and skin and nothing else."
+      }
+    }
+  ],
+  "waveforms": {
+    "rtACS": {
+      "type": "sine",
+      "amp_A": 0.0003,
+      "freq_hz": 10.0,
+      "n_cycles": 2,
+      "dt_s": 0.002,
+      "_comment": "VIRON: 10 Hz sinusoid, 600 uA peak-to-peak = 300 uA amplitude, 25 min/day for 2 x 5 days. Quasi-static at 10 Hz, so the unit-current field scales with the instantaneous amplitude."
+    }
+  },
+  "solve": {
+    "method": "cg",
+    "rtol": 1e-07,
+    "precond": "diag",
+    "cache": true
+  },
+  "outputs": {
+    "dir": "../samples/ratcc_eye_83um/results_viron_periorbital",
+    "save": [
+      "npz",
+      "png"
+    ],
+    "slices": [
+      {
+        "axis": "z",
+        "index": 91
+      }
+    ],
+    "rois": [
+      {
+        "name": "retina",
+        "labels": [
+          77
+        ]
+      },
+      {
+        "name": "cornea",
+        "labels": [
+          66
+        ]
+      },
+      {
+        "name": "sclera",
+        "labels": [
+          33
+        ]
+      },
+      {
+        "name": "optic_nerve",
+        "labels": [
+          24
+        ]
+      },
+      {
+        "name": "stim_Esup",
+        "labels": [
+          121
+        ]
+      },
+      {
+        "name": "return",
+        "labels": [
+          122
+        ]
+      }
+    ]
+  }
+}

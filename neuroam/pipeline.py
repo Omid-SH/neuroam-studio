@@ -34,14 +34,20 @@ from .solver import kcl_report, solve, solve_basis, unit_current_vector
 from .waveforms import Waveform, from_config as waveform_from_config
 from . import viz
 
-SCHEMA_VERSION = "0.1"
+SCHEMA_VERSION = "0.2"
+SUPPORTED_SCHEMAS = ("0.1", "0.2")
+"""0.1 configs still load: they simply have no ``frames`` block and their
+``electrodes`` entries use voxel-index ``shape`` primitives instead of
+millimetre ``geometry``."""
 
 
 # ------------------------------------------------------------------ config
 def load_config(path) -> Dict[str, Any]:
     cfg = json.loads(Path(path).read_text())
-    if str(cfg.get("neuroam", SCHEMA_VERSION)) != SCHEMA_VERSION:
-        raise ValueError(f"config schema {cfg.get('neuroam')} != {SCHEMA_VERSION}")
+    schema = str(cfg.get("neuroam", SCHEMA_VERSION))
+    if schema not in SUPPORTED_SCHEMAS:
+        raise ValueError(f"config schema {schema} not in {SUPPORTED_SCHEMAS}")
+    cfg["_schema"] = schema
     cfg["_dir"] = str(Path(path).resolve().parent)
     return cfg
 
@@ -75,6 +81,95 @@ def build_materials(cfg: Dict[str, Any]) -> MaterialLibrary:
     return lib
 
 
+def _relabel(model: VoxelModel, mapping) -> None:
+    """Rewrite labels before electrodes are placed.
+
+    ``"relabel": {"101": 66}`` strips a montage's existing electrode back to
+    the tissue around it, so a redesigned electrode can be placed on clean
+    anatomy instead of being merged with the old one.
+    """
+    if not mapping:
+        return
+    for src, dst in mapping.items():
+        model.labels[model.labels == int(src)] = int(dst)
+
+
+def build_frames(cfg: Dict[str, Any], model: VoxelModel) -> Dict[str, Any]:
+    """Build the anatomical frames named in the ``frames`` config block.
+
+    ``{"eye": {"type": "eye", "retina_labels": [77]}}`` fits the globe and
+    points +e3 down the corneal axis; ``{"type": "shell", ...}`` is the general
+    sphere-fit form; ``{"type": "axes", "origin_mm": ..., "axis": ...}`` is an
+    explicit frame.
+    """
+    from .frames import Frame
+    from .geometry import Grid
+
+    out: Dict[str, Any] = {}
+    for name, f in (cfg.get("frames") or {}).items():
+        kind = f.get("type", "eye")
+        if kind == "eye":
+            out[name] = Frame.eye(model, tuple(f.get("retina_labels", (77,))),
+                                  anterior=f.get("anterior"),
+                                  anterior_from_labels=f.get("anterior_from_labels"),
+                                  name=name)
+        elif kind == "shell":
+            out[name] = Frame.from_shell(model, f["labels"], axis=f.get("axis"),
+                                         axis_from_labels=f.get("axis_from_labels"),
+                                         axis_sign=float(f.get("axis_sign", 1.0)),
+                                         name=name)
+        elif kind == "axes":
+            grid = Grid.from_model(model)
+            origin = f.get("origin_mm")
+            if origin is None:
+                origin = grid.centers_mm(np.asarray(f["origin_vox"], float))
+            out[name] = Frame.from_axes(origin, f.get("axis", (0, 0, 1)), grid,
+                                        roll_deg=float(f.get("roll_deg", 0.0)),
+                                        name=name)
+        else:
+            raise ValueError(f"unknown frame type {kind!r}")
+    return out
+
+
+def _is_v02_electrodes(entries) -> bool:
+    return any(("geometry" in e) or ("from_label" in e) for e in entries)
+
+
+def build_electrodes(cfg: Dict[str, Any], model: VoxelModel):
+    """Register the ``electrodes`` block onto a model; returns a Montage or None.
+
+    Two dialects are accepted.  v0.1 entries carry ``shape`` and paint an
+    axis-aligned primitive at voxel indices.  v0.2 entries carry ``geometry``
+    (millimetre regions, optionally placed in a named frame) or ``from_label``
+    (adopt voxels already painted in the anatomy), and get a terminal model
+    and a QC report.
+    """
+    entries = cfg.get("electrodes", [])
+    if not entries:
+        return None
+    if not _is_v02_electrodes(entries):
+        for el in entries:
+            e = dict(el)
+            shape = e.pop("shape", {"type": "none"})
+            skw = dict(shape)
+            stype = skw.pop("type")
+            model.add_electrode(shape=stype, role=e["role"],
+                                material=int(e.get("material",
+                                                   101 if e["role"] == "source" else 100)),
+                                waveform=e.get("waveform", e.get("name", "stim")),
+                                node=e.get("node"), **skw)
+        return None
+
+    from .electrodes import Montage, specs_from_config
+    frames = build_frames(cfg, model)
+    specs = specs_from_config(entries, model, frames)
+    mont = Montage(name=cfg.get("montage", cfg.get("name", "montage")),
+                   electrodes=specs, base_in=model.name)
+    mont.build(model)
+    mont.frames = {k: v.describe() for k, v in frames.items()}   # type: ignore[attr-defined]
+    return mont
+
+
 def build_model(cfg: Dict[str, Any]) -> VoxelModel:
     mc = cfg["model"]
     if "legacy_in" in mc:
@@ -84,6 +179,9 @@ def build_model(cfg: Dict[str, Any]) -> VoxelModel:
         extra = build_materials(cfg)
         for m in extra:
             model.materials.add(m)
+        _relabel(model, mc.get("relabel"))
+        if _is_v02_electrodes(cfg.get("electrodes", [])):
+            model.montage = build_electrodes(cfg, model)   # type: ignore[attr-defined]
         return model
 
     lib = build_materials(cfg)
@@ -95,16 +193,8 @@ def build_model(cfg: Dict[str, Any]) -> VoxelModel:
         kind = s.pop("type")
         mat = int(s.pop("material"))
         getattr(model, f"add_{kind}")(mat, **s)
-    for el in cfg.get("electrodes", []):
-        e = dict(el)
-        shape = e.pop("shape", {"type": "none"})
-        skw = dict(shape)
-        stype = skw.pop("type")
-        model.add_electrode(shape=stype, role=e["role"],
-                            material=int(e.get("material",
-                                               101 if e["role"] == "source" else 100)),
-                            waveform=e.get("waveform", e.get("name", "stim")),
-                            node=e.get("node"), **skw)
+    _relabel(model, mc.get("relabel"))
+    model.montage = build_electrodes(cfg, model)   # type: ignore[attr-defined]
     return model
 
 
@@ -135,7 +225,7 @@ def run(config_path, out_dir: Optional[str] = None,
     out.mkdir(parents=True, exist_ok=True)
     produced: List[str] = []
     manifest: Dict[str, Any] = {
-        "neuroam_version": __version__, "schema": SCHEMA_VERSION,
+        "neuroam_version": __version__, "schema": cfg.get("_schema", SCHEMA_VERSION),
         "name": name, "python": sys.version.split()[0],
         "platform": platform.platform(),
         "config": {k: v for k, v in cfg.items() if not k.startswith("_")},
@@ -148,6 +238,30 @@ def run(config_path, out_dir: Optional[str] = None,
     solve_cfg = cfg.get("solve", {})
     cache = ResultCache(root=out / ".cache",
                         enabled=bool(solve_cfg.get("cache", True)))
+
+    # ---- electrode registration report + overlay artefact ----
+    mont = getattr(model, "montage", None)
+    if mont is not None:
+        progress("[neuroam] electrodes")
+        for line in mont.report().splitlines():
+            progress("  " + line)
+        mont.save(out)
+        manifest["electrodes"] = {
+            "montage": mont.name,
+            "frames": getattr(mont, "frames", {}),
+            "qc": [{"name": q.name, "role": q.role, "label": q.label,
+                    "terminal": q.terminal, "n_voxels": q.n_voxels,
+                    "volume_mm3": q.volume_mm3,
+                    "surface_area_mm2": q.surface_area_mm2,
+                    "n_components": q.n_components,
+                    "contact_area_mm2": {str(k): v for k, v in q.contact_area_mm2.items()},
+                    "terminal_node": list(q.terminal_node) if q.terminal_node else None,
+                    "terminal_inside": q.terminal_inside,
+                    "warnings": q.warnings} for q in mont.qc],
+        }
+        if mont.warnings:
+            for w in mont.warnings:
+                progress(f"  !! {w}")
 
     mrm = _resolve(cfg, cfg["model"].get("mrm")) if "mrm" in cfg.get("model", {}) \
         else None

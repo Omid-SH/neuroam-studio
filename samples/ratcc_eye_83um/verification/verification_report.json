@@ -1,0 +1,262 @@
+{
+  "world": [
+    180,
+    160,
+    220
+  ],
+  "unit_voxel_m": 8.3e-05,
+  "crop_offset_in_full_model": [
+    230,
+    290,
+    150
+  ],
+  "raw_model_electrode_voxels": {
+    "101": 0,
+    "102": 0,
+    "110": 0
+  },
+  "voxels_differing_ref_vs_raw": 6968,
+  "replay_exact": true,
+  "geometry": [
+    {
+      "name": "CL_stim (101)",
+      "generated_voxels": 1256,
+      "reference_voxels": 1144,
+      "intersection": 1072,
+      "dice": 0.8933333333333333,
+      "jaccard": 0.8072289156626506,
+      "missed_reference": 72,
+      "extra_generated": 184
+    },
+    {
+      "name": "J_ground (102)",
+      "generated_voxels": 1920,
+      "reference_voxels": 1888,
+      "intersection": 1856,
+      "dice": 0.9747899159663865,
+      "jaccard": 0.9508196721311475,
+      "missed_reference": 32,
+      "extra_generated": 64
+    },
+    {
+      "name": "insulation (110)",
+      "generated_voxels": 4128,
+      "reference_voxels": 3936,
+      "intersection": 3840,
+      "dice": 0.9523809523809523,
+      "jaccard": 0.9090909090909091,
+      "missed_reference": 96,
+      "extra_generated": 288
+    }
+  ],
+  "nodes": {
+    "stim_crop": [
+      72,
+      69,
+      58
+    ],
+    "gnd_crop": [
+      129,
+      103,
+      126
+    ]
+  },
+  "dose_per_unit_A": {
+    "A_reference": [
+      {
+        "name": "retina",
+        "voxels": 27455,
+        "E_mean_V_per_m": 18226.505859375,
+        "E_median_V_per_m": 16263.21875,
+        "E_p95_V_per_m": 30282.865234375,
+        "E_max_V_per_m": 188416.40625,
+        "J_mean_A_per_m2": 182265.0625,
+        "J_p95_A_per_m2": 302828.625,
+        "J_max_A_per_m2": 1884164.0
+      },
+      {
+        "name": "vitreous",
+        "voxels": 139854,
+        "E_mean_V_per_m": 29117.1875,
+        "E_median_V_per_m": 25866.890625,
+        "E_p95_V_per_m": 51467.9453125,
+        "E_max_V_per_m": 359562.40625,
+        "J_mean_A_per_m2": 9546.619140625,
+        "J_p95_A_per_m2": 16874.736328125,
+        "J_max_A_per_m2": 117889.3125
+      },
+      {
+        "name": "eye (retina+vitreous)",
+        "voxels": 167309,
+        "E_mean_V_per_m": 27330.0546875,
+        "E_median_V_per_m": 25122.341796875,
+        "E_p95_V_per_m": 48169.5859375,
+        "E_max_V_per_m": 359562.40625,
+        "J_mean_A_per_m2": 37889.29296875,
+        "J_p95_A_per_m2": 190386.765625,
+        "J_max_A_per_m2": 1884164.0
+      },
+      {
+        "name": "whole crop (tissue)",
+        "voxels": 3058432,
+        "E_mean_V_per_m": 13724.873046875,
+        "E_median_V_per_m": 5794.9990234375,
+        "E_p95_V_per_m": 35860.578125,
+        "E_max_V_per_m": 3490892.25,
+        "J_mean_A_per_m2": 4155.3291015625,
+        "J_p95_A_per_m2": 11311.373046875,
+        "J_max_A_per_m2": 2004156.75
+      }
+    ],
+    "C_parametric": [
+      {
+        "name": "retina",
+        "voxels": 27455,
+        "E_mean_V_per_m": 18838.681640625,
+        "E_median_V_per_m": 16817.3203125,
+        "E_p95_V_per_m": 32242.84765625,
+        "E_max_V_per_m": 172707.609375,
+        "J_mean_A_per_m2": 188386.8125,
+        "J_p95_A_per_m2": 322428.46875,
+        "J_max_A_per_m2": 1727076.0
+      },
+      {
+        "name": "vitreous",
+        "voxels": 139854,
+        "E_mean_V_per_m": 28360.3203125,
+        "E_median_V_per_m": 25684.0859375,
+        "E_p95_V_per_m": 47825.47265625,
+        "E_max_V_per_m": 462188.28125,
+        "J_mean_A_per_m2": 14127.041015625,
+        "J_p95_A_per_m2": 15773.15234375,
+        "J_max_A_per_m2": 14641764.0
+      },
+      {
+        "name": "eye (retina+vitreous)",
+        "voxels": 167309,
+        "E_mean_V_per_m": 26797.841796875,
+        "E_median_V_per_m": 25055.193359375,
+        "E_p95_V_per_m": 45219.25390625,
+        "E_max_V_per_m": 462188.28125,
+        "J_mean_A_per_m2": 42722.64453125,
+        "J_p95_A_per_m2": 196554.765625,
+        "J_max_A_per_m2": 14641764.0
+      },
+      {
+        "name": "whole crop (tissue)",
+        "voxels": 3058432,
+        "E_mean_V_per_m": 14516.189453125,
+        "E_median_V_per_m": 5694.2822265625,
+        "E_p95_V_per_m": 34380.7890625,
+        "E_max_V_per_m": 4252635.0,
+        "J_mean_A_per_m2": 4634.5458984375,
+        "J_p95_A_per_m2": 10407.23828125,
+        "J_max_A_per_m2": 20453338.0
+      }
+    ]
+  },
+  "field_agreement_vs_reference_Jmag": {
+    "C_parametric": [
+      {
+        "region": "retina",
+        "voxels": 27455,
+        "mean_a": 182265.0625,
+        "mean_b": 188386.8125,
+        "mean_ratio_b_over_a": 1.033587098121643,
+        "relative_L2_difference": 0.1315053105354309,
+        "pearson_r": 0.9476405422112497,
+        "max_abs_rel_diff": 0.9118431806564331
+      },
+      {
+        "region": "vitreous",
+        "voxels": 139854,
+        "mean_a": 9546.619140625,
+        "mean_b": 14127.041015625,
+        "mean_ratio_b_over_a": 1.479795217514038,
+        "relative_L2_difference": 17.10120391845703,
+        "pearson_r": 0.23234556396116826,
+        "max_abs_rel_diff": 338.5614013671875
+      },
+      {
+        "region": "eye (retina+vitreous)",
+        "voxels": 167309,
+        "mean_a": 37889.29296875,
+        "mean_b": 42722.64453125,
+        "mean_ratio_b_over_a": 1.1275651454925537,
+        "relative_L2_difference": 2.229154109954834,
+        "pearson_r": 0.38179419079954013,
+        "max_abs_rel_diff": 338.5614013671875
+      },
+      {
+        "region": "whole crop (tissue)",
+        "voxels": 3058432,
+        "mean_a": 4155.3291015625,
+        "mean_b": 4634.5458984375,
+        "mean_ratio_b_over_a": 1.1153258085250854,
+        "relative_L2_difference": 2.940162181854248,
+        "pearson_r": 0.333318861719165,
+        "max_abs_rel_diff": 85761.4140625
+      }
+    ]
+  },
+  "field_agreement_tissue_matched": [
+    {
+      "region": "retina",
+      "voxels": 27455,
+      "J_mean_ref": 182265.05794083502,
+      "J_mean_par": 188386.8150860499,
+      "J_mean_pct": 3.358711326447472,
+      "E_p95_ref": 30282.86464843749,
+      "E_p95_par": 32242.847656249996,
+      "E_p95_pct": 6.472250992653805,
+      "rel_L2": 0.13150532327585032,
+      "pearson_r": 0.9476405422112497,
+      "median_abs_rel_pct": 4.5117310386986365,
+      "p95_abs_rel_pct": 21.167948955884665
+    },
+    {
+      "region": "vitreous",
+      "voxels": 139758,
+      "J_mean_ref": 9508.771756634298,
+      "J_mean_par": 9304.852992919272,
+      "J_mean_pct": -2.144533163000273,
+      "E_p95_ref": 51164.18339843748,
+      "E_p95_par": 47837.26425781249,
+      "E_p95_pct": -6.502437681291317,
+      "rel_L2": 0.16634145298411965,
+      "pearson_r": 0.9544397818529277,
+      "median_abs_rel_pct": 3.7765693059638186,
+      "p95_abs_rel_pct": 9.97219380847504
+    },
+    {
+      "region": "eye",
+      "voxels": 167213,
+      "J_mean_ref": 37873.933778649516,
+      "J_mean_par": 38708.63899799604,
+      "J_mean_pct": 2.20390420552794,
+      "E_p95_ref": 47920.07421874999,
+      "E_p95_par": 45227.41796875,
+      "E_p95_pct": -5.619056927391863,
+      "rel_L2": 0.13215668375716796,
+      "pearson_r": 0.9897373337584198,
+      "median_abs_rel_pct": 3.869497910624633,
+      "p95_abs_rel_pct": 12.138996582169257
+    },
+    {
+      "region": "all tissue",
+      "voxels": 3057992,
+      "J_mean_ref": 4140.106056721355,
+      "J_mean_par": 4149.305058154124,
+      "J_mean_pct": 0.22219241021215197,
+      "E_p95_ref": 35803.47734374996,
+      "E_p95_par": 34356.267773437416,
+      "E_p95_pct": -4.042092214725002,
+      "rel_L2": 0.2289199926655913,
+      "pearson_r": 0.9755571325932612,
+      "median_abs_rel_pct": 10.7200817608233,
+      "p95_abs_rel_pct": 54.82303467855545
+    }
+  ],
+  "material_identical_voxels": 6335264,
+  "material_differing_voxels": 736
+}

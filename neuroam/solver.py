@@ -50,6 +50,17 @@ def make_preconditioner(G: sparse.csr_matrix, kind: str = "diag"):
     if kind == "ilu":
         ilu = spla.spilu(G.tocsc(), drop_tol=1e-5, fill_factor=10)
         return spla.LinearOperator(G.shape, ilu.solve)
+    if kind == "amg":
+        try:
+            import pyamg
+        except ImportError as exc:
+            raise ImportError(
+                "precond='amg' needs the optional 'pyamg' package "
+                "(pip install pyamg)") from exc
+        # Smoothed aggregation on the (SPD) conductance matrix: on a 6.44M-
+        # unknown model this took CG from ~2400 iterations to ~50.
+        ml = pyamg.smoothed_aggregation_solver(G.tocsr())
+        return ml.aspreconditioner()
     raise ValueError(f"unknown preconditioner {kind!r}")
 
 
@@ -93,9 +104,36 @@ def solve(system: System, I: np.ndarray, method: str = "auto",
 
 # ------------------------------------------------------------------ basis fields
 def unit_current_vector(system: System, source_name: str) -> np.ndarray:
+    """1 A injected at a source.
+
+    For a ``distributed`` terminal the ampere is split across the electrode's
+    nodes by their weights; for ``node`` and ``supernode`` terminals it enters
+    a single row (for a supernode that row *is* the whole equipotential
+    electrode).
+    """
     I = np.zeros(system.n)
+    w = getattr(system, "terminal_weights", {}).get(source_name)
+    if w is not None:
+        rows, weights = w
+        np.add.at(I, rows, weights / weights.sum())
+        return I
     I[system.source_rows[source_name]] = 1.0
     return I
+
+
+def electrode_impedance(system: System, v: np.ndarray, source_name: str,
+                        current_A: float = 1.0) -> float:
+    """Access impedance of a source electrode, ohm (V_electrode / I).
+
+    Only meaningful for an equipotential (supernode) terminal, where the
+    electrode has a single well-defined potential; for a legacy single-node
+    terminal this returns the potential of that one node, which includes the
+    grid's local spreading resistance and is mesh-dependent.
+    """
+    row = system.source_rows.get(source_name)
+    if row is None:
+        row = system.terminal_rows[source_name]
+    return float(v[row] / current_A)
 
 
 def solve_basis(system: System, source_names: Optional[List[str]] = None,

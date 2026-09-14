@@ -11,7 +11,7 @@ Core objects:
 - :func:`neuroam.pipeline.run` — JSON-config pipeline (ASCENT-style)
 """
 
-__version__ = "0.1.0"
+__version__ = "0.4.0"
 
 from .materials import Material, MaterialLibrary            # noqa: F401
 from .model import VoxelModel, Source                        # noqa: F401
