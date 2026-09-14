@@ -2,10 +2,18 @@
 
 Renders the figure that answers "do the generated electrodes reproduce the
 hand-built montage?" — electrode geometry overlap, retinal |J| for both arms,
-and their per-voxel difference.
+and their per-voxel difference. The Dice-score result this figure is built
+from (0.893 CL ring / 0.975 J lead / 0.952 insulation) is already written up
+in docs/AM_VERIFICATION.md; this script re-renders the figure from the raw
+per-voxel data, not the summary numbers.
 
-Run (after _claude_am_update/05_electrode_placement_verification_claudeAPI.py):
-    python examples/07_verification_figure.py
+Needs the same ``fields.npz`` + ``agreement_tissue_matched.json`` inputs as
+``examples/20_view_model_and_field.py`` — see that script's docstring for
+how to regenerate them; ``agreement_tissue_matched.json`` is tracked in
+this repo, ``fields.npz`` is not.
+
+Run:
+    python examples/21_verification_figure.py
 """
 
 import json

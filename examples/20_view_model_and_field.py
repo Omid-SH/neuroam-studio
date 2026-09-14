@@ -7,8 +7,20 @@ legend entry is a toggle, so you can go
 
 without regenerating anything.  Also writes static PNG snapshots for reports.
 
-Run (after _claude_am_update/05_electrode_placement_verification_claudeAPI.py):
-    python examples/06_view_model_and_field.py
+One of the project's earliest viz3d scripts, from before the full 6-montage
+912x900x504 work existed -- it's kept because the toggle-layered "whole
+head -> eye -> retina" view it builds is still a genuinely useful shape for
+a single montage, but it predates a consistent way to regenerate its input.
+It needs a ``fields.npz`` (``Ex``, ``Ey``, ``Ez``, ``Emag``, ``Jmag``,
+``labels_ref`` for the small ``RatCC_eye_180_160_220_83um_with_retina``
+crop) that this repo does not currently ship or regenerate automatically --
+solve that model the way ``examples/22_retina_distribution_study.py`` does
+and save those arrays to reproduce it. For the current, complete
+equivalent across all 6 full-head montages, see
+``examples/37_neuroam_3d_six_configs.py`` instead.
+
+Run (once fields.npz exists next to this script's SAMP/verification dir):
+    python examples/20_view_model_and_field.py
 """
 
 import sys

@@ -34,6 +34,7 @@ CLINICAL_ELECTRODES
 
 VALIDATION
 AM_VERIFICATION
+STIMULATION_PARAMETER_STUDY
 ```
 
 ```{toctree}
@@ -51,7 +52,11 @@ api/index
 - **Looking for a file format** (`.in`, `.model`, `.mrm`, `.net`, `.vof`,
   `.v`)? [FORMATS.md](FORMATS.md).
 - **Want to know what's actually validated, and against what?**
-  [VALIDATION.md](VALIDATION.md) and [AM_VERIFICATION.md](AM_VERIFICATION.md).
+  [VALIDATION.md](VALIDATION.md) and [AM_VERIFICATION.md](AM_VERIFICATION.md)
+  (including cross-validation against the legacy OEC-RGC pipeline).
+- **Interested in the stimulation-parameter study** (location, orientation,
+  amplitude, waveform, pulse trains, on two real RGC cell types)?
+  [STIMULATION_PARAMETER_STUDY.md](STIMULATION_PARAMETER_STUDY.md).
 - **Building or registering an electrode?** [ELECTRODES.md](ELECTRODES.md)
   and [CLINICAL_ELECTRODES.md](CLINICAL_ELECTRODES.md).
 - **Looking for a function or class?** [API Reference](api/index.md), or

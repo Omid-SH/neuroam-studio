@@ -508,11 +508,11 @@ period effect, not a fixed property of "which cell is more excitable"
 amplitudes, but the *slower*-recovering one once it has just fired, and a
 train is what makes that visible.
 
-![D1 Vm traces: single pulse (top) vs. 20 Hz train vs. zero-drive control (bottom)](../examples/out/pulsetrain_figures/d1_vm_traces.png)
+![D1 Vm traces: single pulse (top) vs. 20 Hz train vs. zero-drive control (bottom)](_static/pulsetrain/d1_vm_traces.png)
 
-![A2i Vm traces: single pulse (top) vs. 20 Hz train vs. zero-drive control (bottom)](../examples/out/pulsetrain_figures/a2i_vm_traces.png)
+![A2i Vm traces: single pulse (top) vs. 20 Hz train vs. zero-drive control (bottom)](_static/pulsetrain/a2i_vm_traces.png)
 
-![Dose-response comparison: single pulse vs. 20 Hz train, both cells, both locations, log-log](../examples/out/pulsetrain_figures/dose_response_comparison.png)
+![Dose-response comparison: single pulse vs. 20 Hz train, both cells, both locations, log-log](_static/pulsetrain/dose_response_comparison.png)
 
 The dose-response figure is the direct visual form of the floor-elimination
 claim above: the single-pulse curves (blue) sit on a flat plateau across
