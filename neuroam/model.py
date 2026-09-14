@@ -27,6 +27,14 @@ import numpy as np
 from .materials import MaterialLibrary, Material, METAL_RHO, INSULATOR_RHO
 
 
+def _abbrev(seq, n: int = 3) -> str:
+    """Short repr for node lists — an equipotential electrode has thousands."""
+    seq = list(seq)
+    if len(seq) <= n:
+        return repr(seq)
+    return f"{seq[:n]!r}... ({len(seq):,} total)"
+
+
 def node_name(x: int, y: int, z: int) -> str:
     return f"{x:04d}{y:04d}{z:04d}"
 
@@ -51,6 +59,15 @@ class VoxelModel:
     sources: List[Source] = field(default_factory=list)
     ground_nodes: List[Tuple[int, int, int]] = field(default_factory=list)
     name: str = "model"
+    terminals: List = field(default_factory=list)
+    """Optional :class:`neuroam.electrodes.Terminal` list.
+
+    A terminal generalizes the legacy single-node source: it names the *set*
+    of lattice nodes belonging to an electrode and how they connect
+    (``supernode`` = merged into one equipotential unknown, ``node`` = legacy
+    single injection node, ``distributed`` = weighted current split).  When
+    empty, assembly uses ``sources``/``ground_nodes`` exactly as before.
+    """
 
     # ------------------------------------------------------------------ basic
     @property
@@ -70,7 +87,10 @@ class VoxelModel:
                 f"{self.n_nodes:,} nodes), dx={self.dx:g} m\n"
                 f"  materials: {mats}\n"
                 f"  sources: {[(s.name, s.node) for s in self.sources]}\n"
-                f"  ground nodes: {self.ground_nodes}")
+                f"  ground nodes: {_abbrev(self.ground_nodes)}"
+                + (f"\n  terminals: "
+                   f"{[(t.name, t.role, t.kind, len(t.nodes)) for t in self.terminals]}"
+                   if self.terminals else ""))
 
     # ------------------------------------------------------------ constructors
     @classmethod

@@ -1,0 +1,24 @@
+{
+  "neuroam": "0.1",
+  "name": "ratcc_eye",
+  "model": {
+    "legacy_in": "../samples/ratcc_eye_83um/RatCC_eye_180_160_220_83um_with_retina.in"
+  },
+  "materials": {"inline": []},
+  "waveforms": {
+    "Cur1": {"type": "biphasic", "amp_A": 200e-6, "pulse_width_s": 1e-3,
+             "period_s": 10e-3, "n_pulses": 2, "dt_s": 1e-4, "ratio": 1.0}
+  },
+  "solve": {"method": "cg", "rtol": 1e-7, "precond": "diag", "cache": true},
+  "outputs": {
+    "dir": "../samples/ratcc_eye_83um/results",
+    "save": ["npz", "png", "vof"],
+    "slices": [{"axis": "z", "index": 91}, {"axis": "x", "index": 89},
+               {"axis": "y", "index": 85}],
+    "rois": [
+      {"name": "retina", "labels": [77]},
+      {"name": "stim_CL", "labels": [101]},
+      {"name": "gnd_J", "labels": [102]}
+    ]
+  }
+}

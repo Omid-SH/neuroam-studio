@@ -1,0 +1,145 @@
+{
+  "neuroam_version": "0.1.0",
+  "schema": "0.1",
+  "name": "ratcc_eye",
+  "python": "3.11.15",
+  "platform": "Linux-6.18.44-fc-v22-x86_64-with-glibc2.39",
+  "config": {
+    "neuroam": "0.1",
+    "name": "ratcc_eye",
+    "model": {
+      "legacy_in": "../samples/ratcc_eye_83um/RatCC_eye_180_160_220_83um_with_retina.in"
+    },
+    "materials": {
+      "inline": []
+    },
+    "waveforms": {
+      "Cur1": {
+        "type": "biphasic",
+        "amp_A": 0.0002,
+        "pulse_width_s": 0.001,
+        "period_s": 0.01,
+        "n_pulses": 2,
+        "dt_s": 0.0001,
+        "ratio": 1.0
+      }
+    },
+    "solve": {
+      "method": "cg",
+      "rtol": 1e-07,
+      "precond": "diag",
+      "cache": true
+    },
+    "outputs": {
+      "dir": "../samples/ratcc_eye_83um/results",
+      "save": [
+        "npz",
+        "png",
+        "vof"
+      ],
+      "slices": [
+        {
+          "axis": "z",
+          "index": 91
+        },
+        {
+          "axis": "x",
+          "index": 89
+        },
+        {
+          "axis": "y",
+          "index": 85
+        }
+      ],
+      "rois": [
+        {
+          "name": "retina",
+          "labels": [
+            77
+          ]
+        },
+        {
+          "name": "stim_CL",
+          "labels": [
+            101
+          ]
+        },
+        {
+          "name": "gnd_J",
+          "labels": [
+            102
+          ]
+        }
+      ]
+    }
+  },
+  "system": {
+    "n_nodes": 6440161,
+    "n_unknowns": 6440160,
+    "nnz": 44871668
+  },
+  "solver": {
+    "Cur1": {
+      "method": "cg",
+      "iterations": 2395,
+      "residual": 2.1952474366805263e-07,
+      "seconds": 378.2828359603882
+    }
+  },
+  "conservation": {
+    "max_kcl_residual_A": 2.2177118808031082e-08,
+    "sum_kcl_residual_A": 8.136686348560225e-06,
+    "relative_residual": 2.1952474366805263e-07,
+    "injected_A": 1.0
+  },
+  "roi_metrics_per_unit_A": [
+    {
+      "name": "retina",
+      "voxels": 27455,
+      "E_mean_V_per_m": 18226.48787683568,
+      "E_median_V_per_m": 16263.452499243553,
+      "E_p95_V_per_m": 30282.81790143351,
+      "E_max_V_per_m": 188416.34687356118,
+      "J_mean_A_per_m2": 182264.87876835678,
+      "J_p95_A_per_m2": 302828.1790143351,
+      "J_max_A_per_m2": 1884163.4687356118
+    },
+    {
+      "name": "stim_CL",
+      "voxels": 1144,
+      "E_mean_V_per_m": 0.6716658958228376,
+      "E_median_V_per_m": 0.5459845254275821,
+      "E_p95_V_per_m": 1.7592756130731633,
+      "E_max_V_per_m": 6.1264004506343435,
+      "J_mean_A_per_m2": 6716658.958228377,
+      "J_p95_A_per_m2": 17592756.13073163,
+      "J_max_A_per_m2": 61264004.50634344
+    },
+    {
+      "name": "gnd_J",
+      "voxels": 1888,
+      "E_mean_V_per_m": 0.4074497283648012,
+      "E_median_V_per_m": 0.15608204393957065,
+      "E_p95_V_per_m": 0.9466081643969796,
+      "E_max_V_per_m": 4.244844437399886,
+      "J_mean_A_per_m2": 4074497.283648013,
+      "J_p95_A_per_m2": 9466081.643969795,
+      "J_max_A_per_m2": 42448444.37399886
+    }
+  ],
+  "produced": [
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_unit.vof",
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_fields.npz",
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_labels_z91.png",
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_V_z91.png",
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_Emag_z91.png",
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_labels_x89.png",
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_V_x89.png",
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_Emag_x89.png",
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_labels_y85.png",
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_V_y85.png",
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_Emag_y85.png",
+    "/root/neuroam/studio/configs/../samples/ratcc_eye_83um/results/ratcc_eye_wave_Cur1.png"
+  ],
+  "seconds_total": 428.5728316307068
+}

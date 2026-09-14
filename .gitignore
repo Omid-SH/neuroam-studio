@@ -8,3 +8,19 @@ neuroam_out_*/
 *.egg-info/
 build/
 dist/
+docs/_build/
+
+# local Python environment -- never portable, never committed
+.venv/
+
+# stray backup archive (superseded by tracked source) -- keep local only
+neuroam-am-viz-update.tar.gz
+
+# the 6 full-head RatCC montage sets: 619-823 MB each, over GitHub's 100 MB
+# hard per-file limit -- regenerate via the lab mesher / examples/28, or
+# fetch separately; only these large binaries are excluded, not the rest
+# of samples/ (small .in configs, electrode designs, neuron models, the
+# small crop models, and verification outputs all stay tracked)
+samples/ratcc_eye_83um/*_912_900_504_*.model
+samples/ratcc_eye_83um/*_912_900_504_*.mrm
+samples/ratcc_eye_83um/*_912_900_504_*.vof

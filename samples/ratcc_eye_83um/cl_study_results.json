@@ -1,0 +1,132 @@
+[
+  {
+    "case": "A_shipped_node",
+    "unknowns": 6440160,
+    "iters": 2395,
+    "solve_s": 587.9,
+    "residual": 2.1952474366805263e-07,
+    "Z_ohm": 552.2895975420682,
+    "retina": {
+      "name": "retina",
+      "voxels": 27455,
+      "E_mean_V_per_m": 18226.48787683568,
+      "E_median_V_per_m": 16263.452499243553,
+      "E_p95_V_per_m": 30282.81790143351,
+      "E_max_V_per_m": 188416.34687356118,
+      "J_mean_A_per_m2": 182264.87876835678,
+      "J_p95_A_per_m2": 302828.1790143351,
+      "J_max_A_per_m2": 1884163.4687356118
+    },
+    "geometry": "shipped label 101",
+    "terminal": "node",
+    "source_node": [
+      96,
+      46,
+      92
+    ],
+    "ground_nodes": [
+      [
+        129,
+        104,
+        134
+      ]
+    ]
+  },
+  {
+    "case": "B_shipped_supernode",
+    "unknowns": 6434411,
+    "iters": 1632,
+    "solve_s": 374.9,
+    "residual": 9.96316619449778e-08,
+    "Z_ohm": 552.2786970134098,
+    "retina": {
+      "name": "retina",
+      "voxels": 27455,
+      "E_mean_V_per_m": 18226.515451402913,
+      "E_median_V_per_m": 16263.45404755106,
+      "E_p95_V_per_m": 30282.872227802618,
+      "E_max_V_per_m": 188417.23297402658,
+      "J_mean_A_per_m2": 182265.1545140291,
+      "J_p95_A_per_m2": 302828.72227802617,
+      "J_max_A_per_m2": 1884172.3297402658
+    },
+    "geometry": "shipped label 101",
+    "terminal": "supernode",
+    "qc": [
+      "CL [source/supernode] label 101: 1,144 vox (0.6541 mm^3), area 16.48 mm^2, 13 component(s)\n    bbox [48, 44, 58]..[95, 91, 123]  centroid [71.9, 68.1, 91.0]\n    touches [66:1308, 13:448, 55:320, 9:188, 33:64, 12:56]  terminal (60, 82, 68) (2652 node(s), inside=True)\n    !! 13 disconnected pieces \u2014 a single terminal cannot drive them all",
+      "J [ground/supernode] label 102: 1,888 vox (1.08 mm^3), area 14.55 mm^2, 4 component(s)\n    bbox [116, 100, 84]..[131, 119, 193]  centroid [128.6, 102.8, 135.1]\n    touches [110:1200, 12:760, 30:88, 9:36, 33:28]  terminal (129, 103, 136) (3099 node(s), inside=True)\n    !! 4 disconnected pieces \u2014 a single terminal cannot drive them all"
+    ]
+  },
+  {
+    "case": "C_ring_th53",
+    "unknowns": 6434085,
+    "iters": 1628,
+    "solve_s": 364.8,
+    "residual": 9.97693832687375e-08,
+    "Z_ohm": 555.434999631736,
+    "retina": {
+      "name": "retina",
+      "voxels": 27455,
+      "E_mean_V_per_m": 18167.44321286164,
+      "E_median_V_per_m": 16272.503669104528,
+      "E_p95_V_per_m": 30138.876959018573,
+      "E_max_V_per_m": 188422.43596288803,
+      "J_mean_A_per_m2": 181674.4321286164,
+      "J_p95_A_per_m2": 301388.7695901857,
+      "J_max_A_per_m2": 1884224.3596288802
+    },
+    "geometry": "ring_th53",
+    "terminal": "supernode",
+    "n_vox": 1318,
+    "area_mm2": 18.545188000000003,
+    "warnings": []
+  },
+  {
+    "case": "D_ring_th40",
+    "unknowns": 6434675,
+    "iters": 1624,
+    "solve_s": 326.1,
+    "residual": 9.939068055493445e-08,
+    "Z_ohm": 666.4371756416365,
+    "retina": {
+      "name": "retina",
+      "voxels": 27455,
+      "E_mean_V_per_m": 17091.619203025257,
+      "E_median_V_per_m": 15291.71412296864,
+      "E_p95_V_per_m": 29172.88095285034,
+      "E_max_V_per_m": 188564.09729434192,
+      "J_mean_A_per_m2": 170916.19203025257,
+      "J_p95_A_per_m2": 291728.8095285034,
+      "J_max_A_per_m2": 1885640.9729434191
+    },
+    "geometry": "ring_th40",
+    "terminal": "supernode",
+    "n_vox": 1048,
+    "area_mm2": 15.018020000000002,
+    "warnings": []
+  },
+  {
+    "case": "E_cap_30",
+    "unknowns": 6432285,
+    "iters": 1630,
+    "solve_s": 367.9,
+    "residual": 9.963752800774143e-08,
+    "Z_ohm": 778.8639504328117,
+    "retina": {
+      "name": "retina",
+      "voxels": 27455,
+      "E_mean_V_per_m": 16567.16584434287,
+      "E_median_V_per_m": 14679.847766795097,
+      "E_p95_V_per_m": 29087.735738597694,
+      "E_max_V_per_m": 188616.39499525467,
+      "J_mean_A_per_m2": 165671.6584434287,
+      "J_p95_A_per_m2": 290877.35738597694,
+      "J_max_A_per_m2": 1886163.949952547
+    },
+    "geometry": "cap_30",
+    "terminal": "supernode",
+    "n_vox": 2450,
+    "area_mm2": 30.697384000000003,
+    "warnings": []
+  }
+]

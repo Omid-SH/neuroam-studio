@@ -1,0 +1,157 @@
+{
+  "neuroam": "0.2",
+  "name": "ratcc_tes_gps",
+  "montage": "TESGPS_OkuEl",
+  "_source": "Rat analogue of the TES-GPS intervention. Lorenz K, Schuster A, Michel HM, Ruckes C, Kronfeld K, Schippert R, Stett A, Beck A. BMJ Open 2026;16:e112879 (doi 10.1136/bmjopen-2025-112879), NCT06682962. Protocol: 'TES therapy is delivered via the OkuStim 2 headset with the OkuEl M thread electrode placed at the inferior limbus of the study eye and counter electrodes on the forehead' (between eyebrow and hairline). Scaling and provenance: docs/CLINICAL_ELECTRODES.md",
+  "_orientation": "EYE-FRAME AZIMUTH CONVENTION (derived from this model, 2026-09-01). phi is measured about the corneal axis from +e1. On RatCC the fitted frame is e1 = (0.5, -0.5, 0.7071), e2 = (-0.5, 0.5, 0.7071), e3 = (-0.7071, -0.7071, 0), so phi = 45 deg is exactly +z and phi = 225 deg is -z. Radial tissue profiles from the globe centre: phi = 45 deg leaves muscle at 5.9 mm, crosses ~1 mm of skin (13) and reaches air -> SUPERIOR (dorsal); phi = 225 deg stays in muscle/fat past 7.6 mm with no skin -> INFERIOR (ventral, into the masseter); phi = 135 deg reaches skin at 5.1 mm -> NASAL/ROSTRAL (toward the snout); phi = 315 deg runs through fat and bone with no skin exit -> TEMPORAL/CAUDAL (toward the midline and braincase), which is also where the optic nerve leans (label 24 centroid at theta = 171 deg, phi = 323 deg). CONFIRM on the full 912x900x504 head model before publishing.",
+  "_crop": "CROP LIMIT -- the 180x160x220 (15 x 13 x 18 mm) eye crop carries periorbital skin only for phi ~ 330..225 deg through 0 and 180; the inferior/temporal sector (phi 240-315 deg) runs out of the crop, and there is no forehead, temple or trunk in it at all. Contacts marked CROP STAND-IN are placed where the crop allows, not where the clinical protocol puts them; electrodes with skip_if_missing are dropped with a warning when the model has no landing site. Re-run against the full head model for publication numbers.",
+  "model": {
+    "legacy_in": "../samples/ratcc_eye_83um/RatCC_eye_180_160_220_83um_with_retina.in",
+    "relabel": {
+      "101": 66,
+      "102": 12,
+      "110": 9
+    },
+    "_comment": "strip the lab montage's own hardware before placing a clinical analogue: 101 = contact-lens ring -> cornea, 102 = J return -> periorbital fat, 110 = its insulation -> muscle"
+  },
+  "materials": {
+    "inline": []
+  },
+  "frames": {
+    "eye": {
+      "type": "eye",
+      "retina_labels": [
+        77
+      ],
+      "_comment": "origin = least-squares centre of the retina shell, +e3 = corneal axis. RatCC 83 um crop: centre (89.00, 85.00, 91.00) vox, globe radius 3.155 mm (sphere-fit RMS 48 um); outer ocular surface 3.36 mm; limbus, the cornea(66)/sclera(33) crossover on the outer shell, at theta = 74 deg -> corneal chord radius 3.23 mm, i.e. a 6.5 mm cornea."
+    }
+  },
+  "electrodes": [
+    {
+      "name": "OkuEl",
+      "role": "source",
+      "label": 101,
+      "terminal": "supernode",
+      "waveform": "TES",
+      "overwrite": "any",
+      "min_voxels": 120,
+      "geometry": {
+        "type": "arc",
+        "frame": "eye",
+        "r_mm": 3.46,
+        "theta_deg": 74.0,
+        "tube_radius_mm": 0.1,
+        "phi0_deg": 225.0,
+        "span_deg": 100.0,
+        "n_points": 81,
+        "_comment": "silver thread lying on the ocular surface at the INFERIOR limbus. r = 3.36 mm measured outer surface + 0.10 mm wire radius; theta = 74 deg is the measured limbus; span 100 deg = 5.8 mm of contact, the globe-scaled equivalent of the >=10 mm the OkuEl M is specified to contact on a human eye. Wire radius 0.10 mm (200 um diameter) is the smallest an 83 um grid resolves; a true 150 um DTL-class fibre needs the 41.5 um model."
+      }
+    },
+    {
+      "name": "CTR",
+      "role": "ground",
+      "label": 102,
+      "terminal": "supernode",
+      "overwrite": [
+        0,
+        13
+      ],
+      "min_voxels": 300,
+      "geometry": {
+        "type": "cylinder",
+        "radius_mm": 2.8,
+        "height_mm": 1.0,
+        "frame": "eye",
+        "at": {
+          "theta_deg": 75.0,
+          "phi_deg": 45.0,
+          "on_surface": {
+            "labels": [
+              13
+            ],
+            "standoff_mm": 0.0,
+            "max_mm": 14.0
+          }
+        },
+        "conform": {
+          "labels": [
+            13
+          ],
+          "offset_mm": -0.1,
+          "thickness_mm": 0.3
+        },
+        "_comment": "OkuEl counter electrode. The headset's two adhesive forehead pads are one electrical terminal, so they are modelled as a single supraorbital pad of the same total area: radius 2.8 mm = 0.25 cm^2, the globe-scaled equivalent of ~2 x 2 cm^2 of adhesive pad. CROP STAND-IN -- the true forehead position is not inside this crop. || surface pad: a cylinder of the electrode diameter is landed on the skin along (theta, phi) and draped onto a 0.30 mm shell spanning -0.10..+0.20 mm about the skin surface -- the contact plus the ~0.1 mm of stratum corneum that conductive paste shorts out. overwrite [0, 13] lets it take air and skin and nothing else."
+      }
+    }
+  ],
+  "waveforms": {
+    "TES": {
+      "type": "biphasic",
+      "amp_A": 0.001,
+      "pulse_width_s": 0.005,
+      "period_s": 0.05,
+      "n_pulses": 4,
+      "dt_s": 0.00025,
+      "ratio": 1.0,
+      "cathodic_first": false,
+      "_comment": "TES-GPS, verbatim: 'symmetric biphasic rectangular current pulses (5 ms positive/5 ms negative), 20 Hz, up to 1 mA, 30 min once weekly for 18 months'. Amplitude is set per patient just below the tolerance threshold. Fields solve per ampere, so amp_A is only the multiplier."
+    }
+  },
+  "solve": {
+    "method": "cg",
+    "rtol": 1e-07,
+    "precond": "diag",
+    "cache": true
+  },
+  "outputs": {
+    "dir": "../samples/ratcc_eye_83um/results_tes_gps",
+    "save": [
+      "npz",
+      "png"
+    ],
+    "slices": [
+      {
+        "axis": "z",
+        "index": 91
+      }
+    ],
+    "rois": [
+      {
+        "name": "retina",
+        "labels": [
+          77
+        ]
+      },
+      {
+        "name": "cornea",
+        "labels": [
+          66
+        ]
+      },
+      {
+        "name": "sclera",
+        "labels": [
+          33
+        ]
+      },
+      {
+        "name": "optic_nerve",
+        "labels": [
+          24
+        ]
+      },
+      {
+        "name": "stim_OkuEl",
+        "labels": [
+          101
+        ]
+      },
+      {
+        "name": "counter",
+        "labels": [
+          102
+        ]
+      }
+    ]
+  }
+}

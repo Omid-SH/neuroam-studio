@@ -1,0 +1,66 @@
+{
+  "neuroam": "0.2",
+  "name": "ratcc_cl_ring",
+  "montage": "CLring_JGND",
+
+  "model": {
+    "legacy_in": "../samples/ratcc_eye_83um/RatCC_eye_180_160_220_83um_with_retina.in",
+    "relabel": {"101": 66},
+    "_comment": "relabel strips the montage's existing contact-lens ring back to the surrounding tissue so the parametric electrode below is placed on clean anatomy"
+  },
+  "materials": {"inline": []},
+
+  "frames": {
+    "eye": {
+      "type": "eye",
+      "retina_labels": [77],
+      "_comment": "origin = least-squares centre of the retina shell; +e3 = corneal axis (away from the retina centroid). Fitted radius ~3.155 mm, RMS 0.048 mm."
+    }
+  },
+
+  "electrodes": [
+    {
+      "name": "CL",
+      "role": "source",
+      "label": 101,
+      "terminal": "supernode",
+      "waveform": "Cur1",
+      "geometry": {
+        "type": "torus",
+        "ring_radius_mm": 2.695,
+        "tube_radius_mm": 0.12,
+        "frame": "eye",
+        "at": {"axial_mm": 2.006},
+        "_comment": "equivalently frame.ring(3.360, 53.3, 0.12): a 240 um wire ring lying on the r = 3.36 mm eye surface, 53.3 deg off the corneal apex"
+      },
+      "overwrite": "any",
+      "min_voxels": 200
+    },
+    {
+      "name": "J",
+      "role": "ground",
+      "label": 102,
+      "terminal": "supernode",
+      "from_label": 102,
+      "_comment": "adopt the J electrode already painted in the anatomy; supernode ties all of its pieces to 0 V, which the legacy single ground node did not"
+    }
+  ],
+
+  "waveforms": {
+    "Cur1": {"type": "biphasic", "amp_A": 200e-6, "pulse_width_s": 1e-3,
+             "period_s": 10e-3, "n_pulses": 2, "dt_s": 1e-4, "ratio": 1.0}
+  },
+
+  "solve": {"method": "cg", "rtol": 1e-7, "precond": "diag", "cache": true},
+
+  "outputs": {
+    "dir": "../samples/ratcc_eye_83um/results_cl_ring",
+    "save": ["npz", "png"],
+    "slices": [{"axis": "z", "index": 91}],
+    "rois": [
+      {"name": "retina", "labels": [77]},
+      {"name": "stim_CL", "labels": [101]},
+      {"name": "gnd_J", "labels": [102]}
+    ]
+  }
+}

@@ -17,6 +17,9 @@ dependencies = [
 [project.optional-dependencies]
 neuron = ["neuron>=8.2"]
 dev = ["pytest>=7"]
+viewer = ["pyvista>=0.43"]
+viz3d = ["plotly>=5.18", "scikit-image>=0.21"]
+amg = ["pyamg>=5.0"]
 
 [project.scripts]
 neuroam = "neuroam.cli:main"

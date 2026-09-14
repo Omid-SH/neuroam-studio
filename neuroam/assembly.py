@@ -21,7 +21,7 @@ Two assembly paths produce identical systems for uniform meshes:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -42,6 +42,24 @@ class System:
     source_rows: Dict[str, int]          # source name -> reduced row index
     world: Tuple[int, int, int]
     dx: float
+    merge_inv: Optional[np.ndarray] = None
+    """kept-node -> reduced unknown, when supernode terminals merge nodes.
+
+    ``None`` means one unknown per kept node (the legacy system).  With
+    equipotential (supernode) electrodes, every node of an electrode maps to
+    the same reduced unknown, so ``G`` is the projected system
+    ``P^T G P`` and :meth:`expand` scatters one electrode potential back to
+    all of its nodes.
+    """
+    terminal_rows: Dict[str, int] = field(default_factory=dict)
+    """electrode name -> reduced row (source terminals only)."""
+    terminal_weights: Dict[str, Tuple[np.ndarray, np.ndarray]] = field(default_factory=dict)
+    """electrode name -> (reduced rows, weights) for distributed terminals."""
+    records: Optional[np.ndarray] = None
+    """the ``.mrm`` records this system was assembled from (n, 7): x y z sx sy
+    sz material — ``None`` for :func:`assemble_uniform`, where every lattice
+    point is already a real node. Used by :func:`neuroam.fields.
+    fill_hanging_nodes` to reconstruct the non-mesh lattice points."""
 
     @property
     def n(self) -> int:
@@ -50,7 +68,8 @@ class System:
     def expand(self, v_reduced: np.ndarray) -> np.ndarray:
         """Reduced solution -> full node vector (ground nodes = 0)."""
         full = np.zeros(len(self.node_coords), dtype=v_reduced.dtype)
-        full[self.keep] = v_reduced
+        full[self.keep] = (v_reduced if self.merge_inv is None
+                           else v_reduced[self.merge_inv])
         return full
 
     def node_grid(self, v_reduced: np.ndarray) -> np.ndarray:
@@ -85,16 +104,33 @@ def _laplacian_from_edges(rows: np.ndarray, cols: np.ndarray, g: np.ndarray,
     return (off + sparse.diags(diag)).tocsr()
 
 
+def _terminals_of(model: VoxelModel, role: str, kind=None):
+    out = []
+    for t in getattr(model, "terminals", []) or []:
+        if t.role == role and (kind is None or t.kind in kind):
+            out.append(t)
+    return out
+
+
 def _reduce_and_index(G_all: sparse.csr_matrix, node_coords: np.ndarray,
                       packed: np.ndarray, model: VoxelModel,
                       world, dx, drop_isolated: bool = False) -> System:
-    ground_packed = _pack(np.array(model.ground_nodes, dtype=np.int64).reshape(-1, 3),
-                          world) if model.ground_nodes else np.array([], dtype=np.int64)
+    gnodes = list(model.ground_nodes)
+    for t in _terminals_of(model, "ground"):
+        gnodes.extend(tuple(int(v) for v in n) for n in t.nodes)
+    if gnodes:
+        seen = set(); uniq = []
+        for g in gnodes:
+            if g not in seen:
+                seen.add(g); uniq.append(g)
+        gnodes = uniq
+    ground_packed = _pack(np.array(gnodes, dtype=np.int64).reshape(-1, 3),
+                          world) if gnodes else np.array([], dtype=np.int64)
     ground_all = np.searchsorted(packed, ground_packed)
     valid = (ground_all < len(packed))
     ground_all = ground_all[valid]
     ground_all = ground_all[packed[ground_all] == ground_packed[valid]]
-    if model.ground_nodes and len(ground_all) == 0:
+    if gnodes and len(ground_all) == 0:
         raise ValueError("no ground node coincides with an existing mesh node")
 
     n_all = len(node_coords)
@@ -111,7 +147,57 @@ def _reduce_and_index(G_all: sparse.csr_matrix, node_coords: np.ndarray,
 
     G = G_all[keep][:, keep].tocsr()
 
+    def _rows_of(nodes) -> np.ndarray:
+        """Reduced rows of a set of lattice nodes (grounded/absent dropped)."""
+        q = _pack(np.asarray(nodes, dtype=np.int64).reshape(-1, 3), world)
+        j = np.searchsorted(packed, q)
+        ok = (j < len(packed))
+        j = np.where(ok, j, 0)
+        ok &= (packed[j] == q)
+        r = np.where(ok, index_of[j], -1)
+        return np.unique(r[r >= 0])
+
+    # -- equipotential (supernode) electrodes: merge their nodes into one unknown
+    merge_inv = None
+    supers = _terminals_of(model, "source", kind=("supernode",))
+    if supers:
+        group = np.arange(len(keep), dtype=np.int64)
+        for t in supers:
+            rows = _rows_of(t.nodes)
+            if len(rows) == 0:
+                raise ValueError(f"terminal {t.name!r} has no live nodes")
+            group[rows] = rows[0]
+        # union-find flattening is unnecessary: groups are disjoint by voxel
+        _, merge_inv = np.unique(group, return_inverse=True)
+        n_red = int(merge_inv.max()) + 1
+        P = sparse.coo_matrix(
+            (np.ones(len(keep)), (np.arange(len(keep)), merge_inv)),
+            shape=(len(keep), n_red)).tocsr()
+        G = (P.T @ G @ P).tocsr()
+
+    def _row(r: int) -> int:
+        return int(r if merge_inv is None else merge_inv[r])
+
     source_rows: Dict[str, int] = {}
+    terminal_rows: Dict[str, int] = {}
+    terminal_weights: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
+
+    for t in _terminals_of(model, "source"):
+        rows = _rows_of(t.nodes)
+        if len(rows) == 0:
+            raise ValueError(f"terminal {t.name!r} has no live nodes")
+        if t.kind == "distributed":
+            w = (t.weights if t.weights is not None
+                 else np.full(len(rows), 1.0 / len(rows)))
+            if len(w) != len(rows):
+                w = np.full(len(rows), 1.0 / len(rows))
+            terminal_weights[t.waveform or t.name] = (
+                np.array([_row(r) for r in rows]), np.asarray(w, float))
+        terminal_rows[t.name] = _row(int(rows[0]))
+        # the terminal is addressable by its waveform name too, so
+        # solve_basis()/superpose() see supernode electrodes as sources
+        source_rows.setdefault(t.waveform or t.name, _row(int(rows[0])))
+
     for s in model.sources:
         p = _pack(np.array(s.node, dtype=np.int64).reshape(1, 3), world)[0]
         j = np.searchsorted(packed, p)
@@ -120,11 +206,13 @@ def _reduce_and_index(G_all: sparse.csr_matrix, node_coords: np.ndarray,
         r = index_of[j]
         if r < 0:
             raise ValueError(f"source node {s.node} is grounded")
-        source_rows[s.name] = int(r)
+        source_rows[s.name] = _row(int(r))
 
     return System(G=G, node_coords=node_coords, keep=keep, index_of=index_of,
                   ground_all=ground_all, source_rows=source_rows,
-                  world=tuple(world), dx=dx)
+                  world=tuple(world), dx=dx, merge_inv=merge_inv,
+                  terminal_rows=terminal_rows,
+                  terminal_weights=terminal_weights)
 
 
 # --------------------------------------------------------------------- uniform path
@@ -279,7 +367,9 @@ def assemble_mrm(model: VoxelModel, records: np.ndarray) -> System:
     node_coords = np.stack([xc, yc, zc], axis=1).astype(np.int64)
 
     G_all = _laplacian_from_edges(rows, cols, g, len(packed))
-    return _reduce_and_index(G_all, node_coords, packed, model, world, dx)
+    system = _reduce_and_index(G_all, node_coords, packed, model, world, dx)
+    system.records = records
+    return system
 
 
 def assemble(model: VoxelModel, mrm_path=None) -> System:

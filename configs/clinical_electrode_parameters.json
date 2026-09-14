@@ -1,0 +1,225 @@
+{
+  "_about": "Electrode design and placement extracted from two glaucoma electrical-stimulation trial protocols, kept species-independent so the same numbers can be scaled onto the rat, rabbit and human models. Rat instantiations: configs/ratcc_tes_gps.json, configs/ratcc_viron_periorbital.json, configs/ratcc_viron_orbital6.json. Narrative and scaling derivation: docs/CLINICAL_ELECTRODES.md",
+  "_extracted": "2026-09-01",
+  "scaling": {
+    "method": "geometric, by globe radius",
+    "human_globe_radius_mm": 12.0,
+    "rat_globe_radius_mm": 3.155,
+    "note": "3.155 mm is the least-squares sphere fit to the RatCC retina shell (RMS 48 um), not a literature value. Factor 0.263. Electrode dimensions scale by k, areas by k^2 = 0.069; currents are NOT scaled here \u2014 fields are solved per ampere and the waveform amplitude is a multiplier.",
+    "globe_radius_ratio": 0.263
+  },
+  "TES_GPS": {
+    "trial": {
+      "name": "TES-GPS",
+      "registration": "NCT06682962",
+      "citation": "Lorenz K, Schuster A, Michel HM, Ruckes C, Kronfeld K, Schippert R, Stett A, Beck A. Transcorneal electrical stimulation for the treatment of visual field defects in patients with open-angle glaucoma: a monocentric, randomised, double-masked, sham-controlled pilot study: the TES-GPS study protocol. BMJ Open 2026;16:e112879.",
+      "doi": "10.1136/bmjopen-2025-112879",
+      "design": "single-centre, randomised 1:1, double-masked, sham-controlled pilot, n = 50, 18 months, University Medical Center Mainz; sponsor Okuvision",
+      "primary_endpoint": "change in Humphrey mean deviation at 18 months"
+    },
+    "device": {
+      "system": "OkuStim 2 System",
+      "manufacturer": "Okuvision GmbH, Reutlingen, Germany",
+      "class": "IIa",
+      "form_factor": "battery-powered head-worn unit, worn like glasses",
+      "programming": "OkuStim Pulse PC software, unmasked staff only"
+    },
+    "active_electrode": {
+      "name": "OkuEl M",
+      "type": "thread / DTL-class fibre",
+      "material": "silver",
+      "single_use": true,
+      "construction": "arched clip carrying two fine threads; the silver thread rests on the ocular surface just above the lower eyelid",
+      "placement": "inferior limbus of the study eye, on the ocular surface",
+      "contact_length_mm_min": 10.0,
+      "contact_condition": "free of pressure at the conjunctiva",
+      "contraindication": "allergy/hypersensitivity to silver",
+      "dimensions_note": "neither the protocol nor the instructions for use quote a thread diameter; DTL-class fibres are 0.05-0.25 mm"
+    },
+    "counter_electrode": {
+      "name": "OkuEl Counter Electrodes",
+      "type": "adhesive skin pad",
+      "count": 2,
+      "placement": "forehead, between eyebrow and hairline",
+      "note": "the older OkuStim instructions for use place the counter electrode at the temple; the TES-GPS protocol specifies the forehead. Both pads are one electrical terminal.",
+      "area_cm2_estimate": 2.0,
+      "area_source": "class-typical adhesive ES pad; not stated in the protocol"
+    },
+    "stimulation": {
+      "waveform": "symmetric biphasic rectangular current pulses",
+      "phase_duration_ms": 5.0,
+      "frequency_hz": 20.0,
+      "amplitude_max_A": 0.001,
+      "amplitude_rule": "set per patient just below the individual tolerance threshold",
+      "session_min": 30,
+      "schedule": "once weekly for 18 months, at home after 4 in-clinic sessions",
+      "charge_per_phase_uC_at_max": 5.0,
+      "device_limit_note": "instructions for use warn current density at the active electrode can exceed 2 mA/cm^2"
+    },
+    "sham": {
+      "description": "identical set-up; a brief subthreshold current for the first 30 s, then 0 uA"
+    }
+  },
+  "VIRON": {
+    "trial": {
+      "name": "VIRON",
+      "registration": "DRKS00029129",
+      "citation": "Schittkowski M, Pohlner J, Mercieca K, Grohmann C, Kroeger L, Prokosch V, Lorenz K, Beck A, Haueisen J, Hunold A, et al. Vision Restoration through transorbital electrical stimulation in Optic Neuropathy in patients with significant optic atrophy due to primary open-angle glaucoma - a randomised, controlled, double-blind, multicentre clinical trial: the VIRON study protocol. BMJ Open 2025;15:e091705.",
+      "doi": "10.1136/bmjopen-2024-091705",
+      "design": "multicentre, randomised, sham-controlled, double-blind, three arms, n = 300 (100/arm); group 1 classical montage, group 2 MRI-individualised montage, group 3 sham",
+      "primary_endpoint": "change in visual-field mean defect immediately after 10 rtACS sessions"
+    },
+    "device": {
+      "system": "DC-Stimulator PLUS",
+      "manufacturer": "neuroConn GmbH, Ilmenau, Germany",
+      "model_no": "0021",
+      "class": "IIa",
+      "conformity": "EC certificate per 93/42/EWG"
+    },
+    "electrodes": {
+      "count": 2,
+      "placement": "periorbital skin; group 1 fixed at the temples, always the same positions",
+      "eyes": "open, straight-ahead fixation (group 1 and sham); optimised gaze direction in group 2",
+      "size_material_stated_in_protocol": false,
+      "inherited_from": [
+        {
+          "citation": "Gall C, Schmidt S, Schittkowski MP, et al. Alternating Current Stimulation for Vision Restoration after Optic Nerve Damage: A Randomized Clinical Trial. PLoS ONE 2016;11:e0156134.",
+          "doi": "10.1371/journal.pone.0156134",
+          "active": {
+            "n": 4,
+            "per_eye": 2,
+            "diameter_mm": 10.0,
+            "material": "gold cup",
+            "product": "Grass SAFELEAD, Astro-Med",
+            "placement": "skin near the orbital cavity",
+            "drive": "one at a time"
+          },
+          "return": {
+            "type": "stainless steel plate",
+            "size_mm": [
+              32,
+              30
+            ],
+            "placement": "right arm"
+          },
+          "stimulation": {
+            "waveform": "biphasic square pulses in bursts",
+            "freq_hz": [
+              8,
+              25
+            ],
+            "amplitude_rule": "125 % of the 5 Hz phosphene threshold",
+            "session_min": [
+              25,
+              50
+            ],
+            "schedule": "2 x 5 weekdays, eyes closed"
+          },
+          "model_electrode": {
+            "shape": "circular",
+            "diameter_mm": 10.0,
+            "height_mm": 3.0,
+            "sigma_S_per_m": 1.5,
+            "placement": "above the right eyebrow",
+            "return": "last axial slice of the neck",
+            "current_A": 0.0005
+          }
+        },
+        {
+          "citation": "Hunold A, Ortega D, Freitag S, Link D, Antal A, Klee S, Haueisen J. Retinal Phosphenes Induced by Transorbital Electrical Stimulation: Influence of Light Adaptation, Electrode Montage, and View Direction. Life 2025;15:820.",
+          "doi": "10.3390/life15050820",
+          "active": {
+            "n": 6,
+            "labels": "E1-E6",
+            "diameter_mm": 10.0,
+            "material": "Ag/AgCl cup",
+            "coupling": "Ten20 conductive paste",
+            "placement": "surrounding the right eye"
+          },
+          "return": {
+            "options": [
+              "right temple (C1)",
+              "vertex (C2)"
+            ],
+            "type": "same 10 mm cup"
+          },
+          "alternative_montage": {
+            "ring": {
+              "inner_diameter_cm": 3.0,
+              "outer_diameter_cm": 7.5,
+              "placement": "surrounding the eye"
+            },
+            "return": {
+              "size_cm": [
+                10,
+                10
+              ],
+              "placement": "occiput"
+            }
+          },
+          "thresholds_uA": {
+            "baseline": [
+              132.25,
+              73.83
+            ],
+            "light_adapted": [
+              122.38,
+              59.56
+            ],
+            "dark_adapted": [
+              329.48,
+              109.65
+            ],
+            "_format": "[mean, sd]; lowest under light adaptation"
+          },
+          "finding": "changing the electrode montage moved the phosphene hot spot by 56 deg (temple return) / 39 deg (vertex return) of polar distance, versus 25 / 18 deg for changing gaze direction -- electrode position steers the retinal target more than gaze does"
+        }
+      ]
+    },
+    "stimulation": {
+      "waveform": "sinusoidal alternating current",
+      "frequency_hz": 10.0,
+      "amplitude_pp_A": 0.0006,
+      "session_min": 25,
+      "schedule": "10 sessions, 2 x 5 consecutive days with a weekend break",
+      "sham": {
+        "amplitude_pp_A": 0.0002,
+        "frequency_hz": 40.0,
+        "duration_s": 60
+      }
+    },
+    "individualisation": {
+      "imaging": "3 T MRI: T1w and T2w 0.85 mm, mDixon 1.1 mm, venogram 0.8 x 1.1 x 1.6 mm",
+      "pipeline": "SimNIBS + CHARM segmentation, eye added semi-automatically in 3D Slicer",
+      "target": "visual-field defect locations (p <= 0.5 % in two pre-treatment fields) projected onto the retinal surface",
+      "objective": "maximise current density in the target region; direction and focality not constrained",
+      "conductivities_S_per_m": {
+        "skin": 0.456,
+        "blood": 0.6,
+        "spongy_bone": 0.025,
+        "compact_bone": 0.008,
+        "csf": 1.654,
+        "grey_matter": 0.275,
+        "white_matter_incl_optic_nerve_head": 0.126,
+        "eye_muscles": 0.16,
+        "cornea": 0.5,
+        "sclera": 0.56,
+        "retina": 0.7,
+        "vitreous_humour": 1.55,
+        "aqueous_humour": 1.8,
+        "lens": 0.32
+      },
+      "reported_gain": {
+        "individual_montage_A_per_m2": [
+          0.18,
+          0.02
+        ],
+        "standard_montage_A_per_m2": [
+          0.09,
+          0.01
+        ],
+        "_format": "[mean, sd] current density in target regions, single-subject proof of principle over 29 target combinations"
+      }
+    }
+  }
+}

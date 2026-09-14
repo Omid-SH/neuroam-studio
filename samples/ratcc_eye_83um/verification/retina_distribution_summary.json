@@ -1,0 +1,355 @@
+{
+  "cur1_amp_A": 0.0002,
+  "reference_splits_deg": [
+    2.5,
+    5.0
+  ],
+  "cases": [
+    {
+      "case": "A_shipped_node",
+      "unknowns": 6440160,
+      "iters": 2395,
+      "solve_s": 290.7,
+      "residual": 2.2352303213733225e-07,
+      "ecc_range_deg": [
+        0.0,
+        120.00723996908619
+      ],
+      "retina_J_whole": {
+        "voxels": 27455,
+        "mean_uA_mm2": 36.45297572021361,
+        "median_uA_mm2": 32.52690496863284,
+        "p95_uA_mm2": 60.565635747259655,
+        "max_uA_mm2": 376.8326934012672
+      },
+      "retina_Etan_whole": {
+        "voxels": 27455,
+        "mean_uA_mm2": 3.5869800801499325,
+        "median_uA_mm2": 3.2435749083653307,
+        "p95_uA_mm2": 5.85150995670602,
+        "max_uA_mm2": 17.197018917065765
+      },
+      "optic_nerve_J": {
+        "voxels": 2176,
+        "mean_uA_mm2": 0.8253836346943438,
+        "median_uA_mm2": 0.6402525326354049,
+        "p95_uA_mm2": 2.024658478020039,
+        "max_uA_mm2": 22.619131769440905
+      },
+      "reference_splits": {
+        "split_2.5deg": {
+          "central": {
+            "voxels": 17,
+            "mean_uA_mm2": 101.41364579675704,
+            "median_uA_mm2": 96.00855157185252,
+            "p95_uA_mm2": 138.12245396093573,
+            "max_uA_mm2": 175.43626516488044
+          },
+          "peripheral": {
+            "voxels": 27438,
+            "mean_uA_mm2": 36.41272747357387,
+            "median_uA_mm2": 32.51934640326421,
+            "p95_uA_mm2": 60.316630676534345,
+            "max_uA_mm2": 376.8326934012672
+          }
+        },
+        "split_5.0deg": {
+          "central": {
+            "voxels": 71,
+            "mean_uA_mm2": 116.28305535918241,
+            "median_uA_mm2": 96.52696724571528,
+            "p95_uA_mm2": 262.8800603297993,
+            "max_uA_mm2": 376.8326934012672
+          },
+          "peripheral": {
+            "voxels": 27384,
+            "mean_uA_mm2": 36.245995890591686,
+            "median_uA_mm2": 32.498185710699396,
+            "p95_uA_mm2": 59.22092958608865,
+            "max_uA_mm2": 306.37063778060997
+          }
+        }
+      },
+      "geometry": "shipped label 101",
+      "terminal": "node"
+    },
+    {
+      "case": "B_shipped_supernode",
+      "unknowns": 6434411,
+      "iters": 1632,
+      "solve_s": 159.4,
+      "residual": 9.96316583218117e-08,
+      "ecc_range_deg": [
+        0.0,
+        120.00723996908619
+      ],
+      "retina_J_whole": {
+        "voxels": 27455,
+        "mean_uA_mm2": 36.45303090281411,
+        "median_uA_mm2": 32.52690809512558,
+        "p95_uA_mm2": 60.5657444556213,
+        "max_uA_mm2": 376.83446594823135
+      },
+      "retina_Etan_whole": {
+        "voxels": 27455,
+        "mean_uA_mm2": 3.5869855781765816,
+        "median_uA_mm2": 3.2435848751850744,
+        "p95_uA_mm2": 5.851524989620765,
+        "max_uA_mm2": 17.19707149071507
+      },
+      "optic_nerve_J": {
+        "voxels": 2176,
+        "mean_uA_mm2": 0.8253870985476193,
+        "median_uA_mm2": 0.6402549291394823,
+        "p95_uA_mm2": 2.0246675713915097,
+        "max_uA_mm2": 22.61922805900412
+      },
+      "reference_splits": {
+        "split_2.5deg": {
+          "central": {
+            "voxels": 17,
+            "mean_uA_mm2": 101.41417826147095,
+            "median_uA_mm2": 96.00906390861336,
+            "p95_uA_mm2": 138.1231656192816,
+            "max_uA_mm2": 175.43712895127615
+          },
+          "peripheral": {
+            "voxels": 27438,
+            "mean_uA_mm2": 36.41278236046055,
+            "median_uA_mm2": 32.51904056120798,
+            "p95_uA_mm2": 60.31685223909745,
+            "max_uA_mm2": 376.83446594823135
+          }
+        },
+        "split_5.0deg": {
+          "central": {
+            "voxels": 71,
+            "mean_uA_mm2": 116.28363814924221,
+            "median_uA_mm2": 96.52748262642699,
+            "p95_uA_mm2": 262.88131168106327,
+            "max_uA_mm2": 376.83446594823135
+          },
+          "peripheral": {
+            "voxels": 27384,
+            "mean_uA_mm2": 36.246049705235365,
+            "median_uA_mm2": 32.49810552394156,
+            "p95_uA_mm2": 59.220498283116214,
+            "max_uA_mm2": 306.3716032849094
+          }
+        }
+      },
+      "geometry": "shipped label 101",
+      "terminal": "supernode"
+    },
+    {
+      "case": "C_ring_th53",
+      "unknowns": 6434085,
+      "iters": 1628,
+      "solve_s": 159.2,
+      "residual": 9.97693876714226e-08,
+      "ecc_range_deg": [
+        0.0,
+        120.00723996908619
+      ],
+      "retina_J_whole": {
+        "voxels": 27455,
+        "mean_uA_mm2": 36.33488642574073,
+        "median_uA_mm2": 32.545007338197074,
+        "p95_uA_mm2": 60.277753918094064,
+        "max_uA_mm2": 376.84487192613983
+      },
+      "retina_Etan_whole": {
+        "voxels": 27455,
+        "mean_uA_mm2": 3.575190518719474,
+        "median_uA_mm2": 3.244118642681784,
+        "p95_uA_mm2": 5.820027925254599,
+        "max_uA_mm2": 17.199725982928104
+      },
+      "optic_nerve_J": {
+        "voxels": 2176,
+        "mean_uA_mm2": 0.8254007270673963,
+        "median_uA_mm2": 0.6402677365066123,
+        "p95_uA_mm2": 2.0246961582664547,
+        "max_uA_mm2": 22.62061680958295
+      },
+      "reference_splits": {
+        "split_2.5deg": {
+          "central": {
+            "voxels": 17,
+            "mean_uA_mm2": 101.40231015007909,
+            "median_uA_mm2": 95.99281607318963,
+            "p95_uA_mm2": 138.11454391748762,
+            "max_uA_mm2": 175.42912266616236
+          },
+          "peripheral": {
+            "voxels": 27438,
+            "mean_uA_mm2": 36.2945720368161,
+            "median_uA_mm2": 32.53802213558528,
+            "p95_uA_mm2": 60.021570280100555,
+            "max_uA_mm2": 376.84487192613983
+          }
+        },
+        "split_5.0deg": {
+          "central": {
+            "voxels": 71,
+            "mean_uA_mm2": 116.27058414435156,
+            "median_uA_mm2": 96.51542098200825,
+            "p95_uA_mm2": 262.8813889331659,
+            "max_uA_mm2": 376.84487192613983
+          },
+          "peripheral": {
+            "voxels": 27384,
+            "mean_uA_mm2": 36.12763275432598,
+            "median_uA_mm2": 32.519559990463094,
+            "p95_uA_mm2": 58.91411003887381,
+            "max_uA_mm2": 306.3916406997686
+          }
+        }
+      },
+      "geometry": "ring_th53",
+      "terminal": "supernode",
+      "n_vox": 1318,
+      "area_mm2": 18.545188000000003
+    },
+    {
+      "case": "D_ring_th40",
+      "unknowns": 6434675,
+      "iters": 1624,
+      "solve_s": 158.3,
+      "residual": 9.93906787541251e-08,
+      "ecc_range_deg": [
+        0.0,
+        120.00723996908619
+      ],
+      "retina_J_whole": {
+        "voxels": 27455,
+        "mean_uA_mm2": 34.18323840606335,
+        "median_uA_mm2": 30.583428245936826,
+        "p95_uA_mm2": 58.34576190573314,
+        "max_uA_mm2": 377.12819458894603
+      },
+      "retina_Etan_whole": {
+        "voxels": 27455,
+        "mean_uA_mm2": 3.3614151402137455,
+        "median_uA_mm2": 3.048493797013566,
+        "p95_uA_mm2": 5.638898001804781,
+        "max_uA_mm2": 17.20394943280551
+      },
+      "optic_nerve_J": {
+        "voxels": 2176,
+        "mean_uA_mm2": 0.8244786129865517,
+        "median_uA_mm2": 0.6387754645824224,
+        "p95_uA_mm2": 2.020599133965652,
+        "max_uA_mm2": 22.670109559041485
+      },
+      "reference_splits": {
+        "split_2.5deg": {
+          "central": {
+            "voxels": 17,
+            "mean_uA_mm2": 101.29253434548703,
+            "median_uA_mm2": 95.8613002924401,
+            "p95_uA_mm2": 138.02217528277728,
+            "max_uA_mm2": 175.4002229594485
+          },
+          "peripheral": {
+            "voxels": 27438,
+            "mean_uA_mm2": 34.14165891663373,
+            "median_uA_mm2": 30.579618142149315,
+            "p95_uA_mm2": 58.02577294215536,
+            "max_uA_mm2": 377.12819458894603
+          }
+        },
+        "split_5.0deg": {
+          "central": {
+            "voxels": 71,
+            "mean_uA_mm2": 116.21962976379581,
+            "median_uA_mm2": 96.38550611504374,
+            "p95_uA_mm2": 262.9913816795818,
+            "max_uA_mm2": 377.12819458894603
+          },
+          "peripheral": {
+            "voxels": 27384,
+            "mean_uA_mm2": 33.970538150936314,
+            "median_uA_mm2": 30.56706242491967,
+            "p95_uA_mm2": 57.01514323223924,
+            "max_uA_mm2": 306.55784638875997
+          }
+        }
+      },
+      "geometry": "ring_th40",
+      "terminal": "supernode",
+      "n_vox": 1048,
+      "area_mm2": 15.018020000000002
+    },
+    {
+      "case": "E_cap_30",
+      "unknowns": 6432285,
+      "iters": 1630,
+      "solve_s": 158.6,
+      "residual": 9.963752391781455e-08,
+      "ecc_range_deg": [
+        0.0,
+        120.00723996908619
+      ],
+      "retina_J_whole": {
+        "voxels": 27455,
+        "mean_uA_mm2": 33.13433168870344,
+        "median_uA_mm2": 29.35969553360431,
+        "p95_uA_mm2": 58.17547147725309,
+        "max_uA_mm2": 377.232789990874
+      },
+      "retina_Etan_whole": {
+        "voxels": 27455,
+        "mean_uA_mm2": 3.2564210189120524,
+        "median_uA_mm2": 2.926162656936498,
+        "p95_uA_mm2": 5.623847295780969,
+        "max_uA_mm2": 17.190487563665393
+      },
+      "optic_nerve_J": {
+        "voxels": 2176,
+        "mean_uA_mm2": 0.8239087781026557,
+        "median_uA_mm2": 0.6379361630376852,
+        "p95_uA_mm2": 2.0188587531000346,
+        "max_uA_mm2": 22.696317724668866
+      },
+      "reference_splits": {
+        "split_2.5deg": {
+          "central": {
+            "voxels": 17,
+            "mean_uA_mm2": 101.32892198880414,
+            "median_uA_mm2": 95.89257775600122,
+            "p95_uA_mm2": 138.060623869816,
+            "max_uA_mm2": 175.4604684357889
+          },
+          "peripheral": {
+            "voxels": 27438,
+            "mean_uA_mm2": 33.09207977401937,
+            "median_uA_mm2": 29.35543710046934,
+            "p95_uA_mm2": 57.95852379470187,
+            "max_uA_mm2": 377.232789990874
+          }
+        },
+        "split_5.0deg": {
+          "central": {
+            "voxels": 71,
+            "mean_uA_mm2": 116.26777286703863,
+            "median_uA_mm2": 96.41582337378034,
+            "p95_uA_mm2": 263.06953339787003,
+            "max_uA_mm2": 377.232789990874
+          },
+          "peripheral": {
+            "voxels": 27384,
+            "mean_uA_mm2": 32.918787052285765,
+            "median_uA_mm2": 29.341925135984475,
+            "p95_uA_mm2": 56.70974271775013,
+            "max_uA_mm2": 306.57836135763745
+          }
+        }
+      },
+      "geometry": "cap_30",
+      "terminal": "supernode",
+      "n_vox": 2450,
+      "area_mm2": 30.697384000000003
+    }
+  ]
+}

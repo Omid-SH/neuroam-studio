@@ -7,8 +7,9 @@ from neuroam.materials import Material, MaterialLibrary
 from neuroam.model import VoxelModel, node_name, parse_node_name
 from neuroam.waveforms import (Waveform, biphasic_pulse_train, dc,
                                monophasic_pulse_train, sine, from_config)
-from neuroam.coupling import (build_v_matrix, read_coordinates,
-                              read_unit_field, read_v_file, sample_node_grid,
+from neuroam.coupling import (build_v_matrix, place_aligned, read_coordinates,
+                              read_unit_field, read_v_file,
+                              rotation_between_vectors, sample_node_grid,
                               transform_coordinates, write_coordinates,
                               write_unit_field, write_v_file)
 from neuroam.cache import ResultCache, hash_inputs
@@ -122,6 +123,42 @@ def test_transform_coordinates_rigid():
                                 rotate_deg=(0, 0, 90), pivot=(0, 0, 0))
     assert np.allclose(out[0], [5, 5, 5], atol=1e-12)
     assert np.allclose(out[1], [5, 6, 5], atol=1e-12)
+
+
+def test_rotation_between_vectors_aligns_and_preserves_length():
+    a = np.array([0.0, 0.0, 1.0])
+    b = np.array([1.0, 1.0, 1.0])
+    R = rotation_between_vectors(a, b)
+    out = R @ a
+    assert np.allclose(out, b / np.linalg.norm(b), atol=1e-10)
+    assert np.allclose(R @ R.T, np.eye(3), atol=1e-10)   # a real rotation
+    assert np.linalg.det(R) == pytest.approx(1.0, abs=1e-10)
+
+
+def test_rotation_between_vectors_identity_when_already_aligned():
+    a = np.array([1.0, 0.0, 0.0])
+    R = rotation_between_vectors(a, a)
+    assert np.allclose(R, np.eye(3), atol=1e-10)
+
+
+def test_rotation_between_vectors_antiparallel():
+    a = np.array([0.0, 0.0, 1.0])
+    b = np.array([0.0, 0.0, -1.0])
+    R = rotation_between_vectors(a, b)
+    assert np.allclose(R @ a, b, atol=1e-10)
+    assert np.allclose(R @ R.T, np.eye(3), atol=1e-10)
+
+
+def test_place_aligned_orients_and_translates():
+    # a "cell" that is a short stick along local +z, pivoted at its own origin
+    coords = np.array([[0.0, 0.0, -1.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
+    target_point = np.array([10.0, 20.0, 30.0])
+    target_axis = np.array([1.0, 0.0, 0.0])   # want local +z -> world +x
+    out = place_aligned(coords, local_axis=(0, 0, 1), target_axis=target_axis,
+                        target_point=target_point, pivot=(0, 0, 0))
+    assert np.allclose(out[1], target_point, atol=1e-10)          # pivot landed exactly
+    assert np.allclose(out[2] - out[1], [1, 0, 0], atol=1e-10)    # +local-z -> +world-x
+    assert np.allclose(out[0] - out[1], [-1, 0, 0], atol=1e-10)
 
 
 def test_cache_roundtrip(tmp_path):

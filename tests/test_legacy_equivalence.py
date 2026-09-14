@@ -12,13 +12,13 @@
 import numpy as np
 import pytest
 
-from neuroam.assembly import assemble_uniform, assemble_mrm
+from neuroam.assembly import System, assemble_uniform, assemble_mrm
 from neuroam.mesh import uniform_records, write_mrm
 from neuroam.netlist import write_net, read_net
 from neuroam.model import VoxelModel
 from neuroam.materials import Material, MaterialLibrary
 from neuroam.solver import solve, unit_current_vector
-from neuroam.fields import node_grid
+from neuroam.fields import fill_hanging_nodes, node_grid, write_vof, read_vof
 
 
 def small_model():
@@ -143,3 +143,135 @@ def test_multires_matches_uniform_homogeneous():
         du = gu[p] - gu[ref]
         dm = gm[p] - gm[ref]
         assert abs(dm - du) / abs(du) < 0.05, (p, du, dm)
+
+
+def test_fill_hanging_nodes_exact_for_trilinear_field():
+    """A single block's trilinear fill must reproduce any trilinear
+    polynomial of the corner potentials exactly -- that's the whole point of
+    using the block's own shape functions instead of neighbor-averaging."""
+    sx, sy, sz = 4, 3, 5
+    corners = np.array([[dx, dy, dz] for dx in (0, sx) for dy in (0, sy)
+                        for dz in (0, sz)], dtype=np.int64)
+    a, b, c, d, e = 1.5, -0.7, 2.0, 0.3, 3.0   # includes an xyz cross term
+
+    def V(x, y, z):
+        return a * x + b * y + c * z + d * x * y * z + e
+
+    grid = np.zeros((sx + 1, sy + 1, sz + 1))
+    for x, y, z in corners:
+        grid[x, y, z] = V(x, y, z)
+
+    records = np.array([[0, 0, 0, sx, sy, sz, 1]], dtype=np.int64)
+    system = System(G=None, node_coords=corners, keep=None, index_of=None,
+                    ground_all=None, source_rows={}, world=(sx, sy, sz),
+                    dx=1.0, records=records)
+
+    out = fill_hanging_nodes(grid, system)
+    for x in range(sx + 1):
+        for y in range(sy + 1):
+            for z in range(sz + 1):
+                assert out[x, y, z] == pytest.approx(V(x, y, z), abs=1e-9)
+
+
+def test_fill_hanging_nodes_mixed_sizes():
+    """Mixed 1x1x1 / 2x2x2 blocks (the fixture from the test above): mesh
+    nodes come back untouched, every lattice point is finite, and the result
+    is identical across repeated calls -- the size-grouped, multithreaded
+    fill has no data race between concurrently-written groups."""
+    lib = MaterialLibrary([Material.from_sigma(1, 1.0)])
+    n = 16
+    m = VoxelModel.empty((n, n, n), dx=1e-4, materials=lib, background=1)
+    m.add_electrode(shape="none", role="source", node=(n // 2, n // 2, n // 2),
+                    material=101, waveform="s")
+    m.materials.add(Material.isotropic_rho(101, 1e-7))
+    for gx in (0, n):
+        for gy in (0, n):
+            for gz in (0, n):
+                m.ground_nodes.append((gx, gy, gz))
+
+    recs = []
+    for x in range(0, n, 2):
+        for y in range(0, n, 2):
+            for z in range(0, n, 2):
+                inner = (4 <= x < 12) and (4 <= y < 12) and (4 <= z < 12)
+                if inner:
+                    for ddx in range(2):
+                        for ddy in range(2):
+                            for ddz in range(2):
+                                recs.append([x + ddx, y + ddy, z + ddz,
+                                             1, 1, 1, 1])
+                else:
+                    recs.append([x, y, z, 2, 2, 2, 1])
+    recs = np.asarray(recs, dtype=np.int64)
+
+    system = assemble_mrm(m, recs)
+    r = solve(system, unit_current_vector(system, "s"), method="direct")
+    grid = node_grid(system, r.v)
+
+    filled = fill_hanging_nodes(grid, system)
+    assert np.isfinite(filled).all()
+
+    c = system.node_coords
+    assert np.array_equal(filled[c[:, 0], c[:, 1], c[:, 2]],
+                          grid[c[:, 0], c[:, 1], c[:, 2]])
+
+    again = fill_hanging_nodes(grid, system)
+    assert np.array_equal(filled, again)
+
+
+def test_write_read_vof_round_trip(tmp_path):
+    m = small_model()
+    system = assemble_uniform(m)
+    r = solve(system, unit_current_vector(system, "stim"), method="direct")
+    grid = node_grid(system, r.v)
+
+    p = write_vof(tmp_path / "tiny.vof", system, r.v)
+    back = read_vof(p, m.world)
+
+    c = system.node_coords
+    is_ground = np.zeros(len(c), dtype=bool)
+    is_ground[system.ground_all] = True
+    # ground rows are written as name "0" (by design -- ground is trivially
+    # 0 V) and read_vof skips name "0" rows entirely, so they read back NaN;
+    # every *other* real mesh node round-trips exactly.
+    expect_real = np.zeros(grid.shape, dtype=bool)
+    expect_real[c[~is_ground, 0], c[~is_ground, 1], c[~is_ground, 2]] = True
+    assert np.array_equal(~np.isnan(back), expect_real)
+    assert np.allclose(back[expect_real], grid[expect_real], atol=1e-8)
+    for gx, gy, gz in m.ground_nodes:
+        assert np.isnan(back[gx, gy, gz])
+
+
+def test_write_vof_handles_a_large_mesh_fast(tmp_path):
+    """The vectorized rewrite this replaced a naive per-row loop with --
+    correctness on a mesh too big to eyeball, and fast enough to matter."""
+    import time
+
+    lib = MaterialLibrary([Material.from_sigma(1, 0.5, name="tissue")])
+    n = 40
+    m = VoxelModel.empty((n, n, n), dx=5e-4, materials=lib, background=1)
+    m.add_electrode(shape="none", role="source", node=(20, 20, 0),
+                    material=101, waveform="s")
+    m.materials.add(Material.isotropic_rho(101, 1e-7))
+    for gx in (0, n):
+        for gy in (0, n):
+            for gz in (0, n):
+                m.ground_nodes.append((gx, gy, gz))
+
+    system = assemble_uniform(m)
+    r = solve(system, unit_current_vector(system, "s"), method="cg", rtol=1e-8)
+
+    t0 = time.time()
+    p = write_vof(tmp_path / "big.vof", system, r.v)
+    elapsed = time.time() - t0
+    assert elapsed < 5.0, f"write_vof took {elapsed:.1f}s for {system.node_coords.shape[0]:,} nodes"
+
+    back = read_vof(p, m.world)
+    grid = node_grid(system, r.v)
+    c = system.node_coords
+    is_ground = np.zeros(len(c), dtype=bool)
+    is_ground[system.ground_all] = True
+    nonground = c[~is_ground]
+    assert np.allclose(back[nonground[:, 0], nonground[:, 1], nonground[:, 2]],
+                       grid[nonground[:, 0], nonground[:, 1], nonground[:, 2]],
+                       atol=1e-8)

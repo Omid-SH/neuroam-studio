@@ -35,6 +35,9 @@ with the legacy toolchain (`.in`, `.model`, `.mrm`, `.net`, `.cur`, `.vof`, coor
 neuroam/
   materials.py   Material library: ρ/σ per axis, refs; JSON I/O; legacy .in parsing
   model.py       VoxelModel (labels, Δ, materials): .model/.in I/O, primitives, electrodes
+  geometry.py    millimetre SDF/CSG region library + bbox-limited rasterization
+  frames.py      anatomical frames (globe fit, corneal axis) + surface operators
+  electrodes.py  ElectrodeSpec/Montage: registration, terminal models, overlays, QC
   mesh.py        .mrm read/write; uniform mesh generation; (external mesher supported)
   assembly.py    Direct CSR assembly: uniform (vectorized) and multires (.mrm records)
   netlist.py     Legacy .net reader (fast) + netgen-equivalent writer (for cross-checks)
@@ -43,11 +46,16 @@ neuroam/
   waveforms.py   pulses, SCB/ACB biphasic, sine, arbitrary; legacy .cur I/O
   coupling.py    trilinear sampling at compartment coords (interp3-equivalent);
                  coordinates/.v file I/O; Vext(t) = basis × waveform
-  neuron_link.py optional NEURON driver (e_extracellular playback, recording) — guarded import
+  neuron_link.py optional NEURON driver (e_extracellular playback, recording,
+                 hoc-cell loading, segment tree connectivity) — guarded import
+  morphology.py  SWC I/O, tree edges, Vm-onto-morphology nearest-neighbor
+                 mapping, synthetic test morphologies
   cache.py       content-hash keyed result store (solve once, reuse)
   pipeline.py    JSON config runner (model → solve → fields → couple → outputs)
-  cli.py         python -m neuroam run/info/validate
+  cli.py         python -m neuroam run/info/validate/view
   viz.py         slice maps, waveform and Vm plots (matplotlib, headless-safe)
+  viewer.py      interactive PyVista anatomy/electrode viewer (`neuroam view`)
+  viz3d.py       self-contained plotly HTML scene builder (shareable, no VTK)
 ```
 
 ## Validation strategy (tests/)
@@ -72,15 +80,31 @@ neuroam/
   repo) to produce `.mrm`; NeuroAM consumes `.mrm` directly.
 - Workstation scale: chunked assembly handles ~1e8-voxel models in RAM; PETSc/distributed
   is a later phase.
-- GUI: CLI + PNG/section outputs now; PySide6/PyVista viewer is Phase 2 (the API is
-  designed so the GUI is a thin layer over `pipeline.py`).
+- GUI: the CLI now includes a PyVista anatomy/electrode viewer (`neuroam view`);
+  a full PySide6 experiment-building interface remains a later phase.
 
 ## Roadmap after v0.1
 
-1. Complex admittance + frequency sweeps; voltage-controlled electrodes.
+0. *(done, v0.2)* Electrode design and registration: millimetre geometry in
+   anatomical frames, equipotential/supernode and distributed terminals,
+   sparse montage overlays, QC report. See ELECTRODES.md.
+0b. *(done, v0.3)* Real-neuron registration and 3-tier visualization: real
+   reconstructed morphologies (D1 and A2i retinal ganglion cells, `samples/
+   neuron_models/rgc_d1` and `rgc_a2i` — same lineage/build script, from the
+   lab's `neuron_exstim_pkg` and `Paknahad2020_D1_A2_Rat`; species unresolved,
+   see each folder's README) registered into an AM field, driven by a real
+   waveform, with location/local-field/activity-over-time views
+   (`neuroam.viz3d.view_neuron_context`, `view_neuron_field`,
+   `animate_neuron_activity`). Note: the two sample cells share a
+   byte-identical hoc build script and so must be built in separate
+   processes (`neuroam.neuron_link.load_hoc_cell` raises clearly if not).
+   See
+   `examples/26_register_neuron.py`.
+1. Complex admittance + frequency sweeps; voltage-controlled (Dirichlet)
+   electrodes, built on the v0.2 supernode machinery.
 2. Native Python multiresolution mesher integration (port of `Mesher/mesher.py`, Zarr-backed).
 3. HDF5/Zarr result store; population-level NEURON runs; threshold search utilities.
-4. PySide6 + PyVista interactive front-end.
+4. Full PySide6 experiment front-end on top of the existing PyVista model viewer.
 5. Cross-species study configs (rabbit/rat/human) as `configs/` presets.
 
 ## IP note

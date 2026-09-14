@@ -123,3 +123,30 @@ def test_iterative_matches_direct(saline_solution):
     rc = solve(system, I, method="cg", rtol=1e-10)
     denom = np.linalg.norm(rd.v)
     assert np.linalg.norm(rc.v - rd.v) / denom < 1e-6
+
+
+def test_amg_preconditioner_matches_direct_and_speeds_up_cg(saline_solution):
+    """precond='amg' (optional pyamg) converges to the same field, in fewer
+    CG iterations than the diagonal preconditioner."""
+    pytest.importorskip("pyamg")
+    system, I, rd = saline_solution
+    r_diag = solve(system, I, method="cg", rtol=1e-10, precond="diag")
+    r_amg = solve(system, I, method="cg", rtol=1e-10, precond="amg")
+    denom = np.linalg.norm(rd.v)
+    assert np.linalg.norm(r_amg.v - rd.v) / denom < 1e-6
+    assert r_amg.iterations <= r_diag.iterations
+
+
+def test_amg_without_pyamg_raises_a_clear_error(monkeypatch, saline_solution):
+    import builtins
+    real_import = builtins.__import__
+
+    def blocked(name, *a, **kw):
+        if name == "pyamg":
+            raise ImportError("no pyamg")
+        return real_import(name, *a, **kw)
+
+    monkeypatch.setattr(builtins, "__import__", blocked)
+    system, I, _ = saline_solution
+    with pytest.raises(ImportError, match="pyamg"):
+        solve(system, I, method="cg", precond="amg")

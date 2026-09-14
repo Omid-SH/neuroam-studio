@@ -10,3 +10,7 @@ dependencies:
   - pip
   - pip:
       - neuron>=8.2   # optional; comment out on platforms without wheels
+      - pyvista>=0.43 # optional interactive 3D model viewer
+      - plotly>=5.18       # optional shareable HTML 3D viewer (neuroam.viz3d)
+      - scikit-image>=0.21 # optional; iso-surfaces for neuroam.viz3d
+      - pyamg>=5.0         # optional; solve(..., precond="amg") on large models
