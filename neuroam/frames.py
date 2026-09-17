@@ -257,16 +257,40 @@ def signed_distance_mm(mask: np.ndarray, dx_mm: float) -> np.ndarray:
 
 
 def surface_band(model, labels: Iterable[int], inner_mm: float, outer_mm: float,
-                 name: str = "band") -> MaskRegion:
+                 name: str = "band", crop_center_mm: Optional[np.ndarray] = None,
+                 crop_radius_mm: Optional[float] = None) -> MaskRegion:
     """Voxels whose signed distance to a tissue lies in ``[inner, outer]`` mm.
 
     ``inner_mm = 0, outer_mm = 0.2`` is a 200 um skin of tissue *outside* the
     structure -- where a surface electrode sits.  Negative values reach inside
     the tissue (a recessed or embedded contact).
+
+    The returned mask always covers the whole model (``MaskRegion`` indexes
+    into it with full-grid voxel coordinates), but the expensive part -- the
+    distance transform -- is computed on a local crop when
+    ``crop_center_mm``/``crop_radius_mm`` are given, and only that crop of the
+    result is filled in (everywhere else is simply "not in the band", which
+    is correct as long as the region this feeds -- typically a small local
+    footprint via :func:`conform` -- never reaches past the crop). Omit both
+    for the previous whole-grid behaviour, e.g. a genuinely global band.
     """
     grid = Grid.from_model(model)
-    sd = signed_distance_mm(label_mask(model, labels), grid.dx_mm)
-    return MaskRegion((sd >= inner_mm) & (sd <= outer_mm), grid, name=name)
+    shape = np.asarray(grid.shape)
+    if crop_center_mm is None:
+        sd = signed_distance_mm(label_mask(model, labels), grid.dx_mm)
+        return MaskRegion((sd >= inner_mm) & (sd <= outer_mm), grid, name=name)
+
+    pad_mm = max(crop_radius_mm or 0.0, abs(outer_mm), abs(inner_mm)) + 1.0
+    c = grid.index_of_mm(np.asarray(crop_center_mm, float))
+    pad_vox = int(math.ceil(pad_mm / grid.dx_mm))
+    lo = np.clip(c - pad_vox, 0, None)
+    hi = np.clip(c + pad_vox + 1, None, shape)
+    sub_labels = model.labels[lo[0]:hi[0], lo[1]:hi[1], lo[2]:hi[2]]
+    sd = signed_distance_mm(np.isin(sub_labels, np.asarray(list(labels))), grid.dx_mm)
+    band_local = (sd >= inner_mm) & (sd <= outer_mm)
+    full = np.zeros(shape, dtype=bool)
+    full[lo[0]:hi[0], lo[1]:hi[1], lo[2]:hi[2]] = band_local
+    return MaskRegion(full, grid, name=name)
 
 
 def conform(footprint: Region, model, labels: Iterable[int],
@@ -278,8 +302,21 @@ def conform(footprint: Region, model, labels: Iterable[int],
     contact goes (a cone from the eye centre, a cylinder, a box); the result
     is its intersection with a thin shell hugging the tissue, so the electrode
     follows curvature instead of cutting through it.
+
+    Restricts the underlying distance transform to a crop around
+    ``footprint`` itself (via its own ``bounds_mm()``) when available -- a
+    conformal footprint is always small and local, so there is no reason to
+    pay for a whole-model distance transform to drape it (see
+    :func:`surface_band`'s ``crop_*`` parameters).
     """
-    band = surface_band(model, labels, offset_mm, offset_mm + thickness_mm, name=name)
+    crop_center = crop_radius = None
+    b = footprint.bounds_mm()
+    if b is not None:
+        lo_mm, hi_mm = np.asarray(b[0]), np.asarray(b[1])
+        crop_center = 0.5 * (lo_mm + hi_mm)
+        crop_radius = float(np.linalg.norm(hi_mm - lo_mm)) * 0.5
+    band = surface_band(model, labels, offset_mm, offset_mm + thickness_mm, name=name,
+                        crop_center_mm=crop_center, crop_radius_mm=crop_radius)
     return footprint & band
 
 
@@ -288,10 +325,13 @@ def surface_point(model, labels: Iterable[int], origin_mm, direction,
     """March from ``origin`` along ``direction``; return the exit point of the tissue.
 
     Returns the last point inside the labelled tissue (world mm), or ``None``
-    if the ray never enters it.
+    if the ray never enters it. Samples ``model.labels`` directly at each
+    step rather than building a whole-grid boolean mask first (``label_mask``)
+    -- a ray march only ever touches a few hundred points regardless of model
+    size, so there is no reason to pay for a full-array pass first.
     """
     grid = Grid.from_model(model)
-    mask = label_mask(model, labels)
+    labels_arr = np.asarray(list(labels))
     d = np.asarray(direction, float)
     d = d / max(np.linalg.norm(d), 1e-12)
     step = step_mm or 0.5 * grid.dx_mm
@@ -303,25 +343,42 @@ def surface_point(model, labels: Iterable[int], origin_mm, direction,
     ok = np.all((idx >= 0) & (idx < np.asarray(grid.shape)), axis=-1)
     inside = np.zeros(len(P), dtype=bool)
     i = idx[ok]
-    inside[ok] = mask[i[:, 0], i[:, 1], i[:, 2]]
+    inside[ok] = np.isin(model.labels[i[:, 0], i[:, 1], i[:, 2]], labels_arr)
     if not inside.any():
         return None
     return P[np.flatnonzero(inside)[-1]]
 
 
-def normal_at(model, labels: Iterable[int], point_mm, smooth_vox: float = 1.5):
-    """Outward unit normal of a labelled surface near ``point`` (world mm)."""
+def normal_at(model, labels: Iterable[int], point_mm, smooth_vox: float = 1.5,
+             crop_mm: float = 3.0):
+    """Outward unit normal of a labelled surface near ``point`` (world mm).
+
+    The normal is an inherently *local* quantity -- computed here from a
+    small crop of the model around ``point_mm`` (``crop_mm`` on each side,
+    padded for the smoothing kernel), not a whole-model distance transform.
+    On a small crop model both cost the same; on a full head model (hundreds
+    of millions of voxels) a whole-grid ``distance_transform_edt`` here would
+    take minutes *per electrode* for a result that only ever depended on a
+    neighbourhood a few voxels across -- ``crop_mm=3.0`` is generous for a
+    typical ``smooth_vox<=3``; raise it only if a very large ``smooth_vox``
+    genuinely needs more context.
+    """
     from scipy import ndimage
     grid = Grid.from_model(model)
-    sd = signed_distance_mm(label_mask(model, labels), grid.dx_mm)
+    shape = np.asarray(grid.shape)
+    i = grid.index_of_mm(point_mm)
+    pad_vox = int(math.ceil(crop_mm / grid.dx_mm)) + int(math.ceil(smooth_vox * 3)) + 2
+    lo = np.clip(i - pad_vox, 0, None)
+    hi = np.clip(i + pad_vox + 1, None, shape)
+    sub = model.labels[lo[0]:hi[0], lo[1]:hi[1], lo[2]:hi[2]]
+    sd = signed_distance_mm(np.isin(sub, np.asarray(list(labels))), grid.dx_mm)
     if smooth_vox:
         sd = ndimage.gaussian_filter(sd, smooth_vox)
-    i = grid.index_of_mm(point_mm)
-    i = np.clip(i, 1, np.asarray(grid.shape) - 2)
+    li = np.clip(i - lo, 1, np.asarray(sub.shape) - 2)
     g = np.array([
-        sd[i[0] + 1, i[1], i[2]] - sd[i[0] - 1, i[1], i[2]],
-        sd[i[0], i[1] + 1, i[2]] - sd[i[0], i[1] - 1, i[2]],
-        sd[i[0], i[1], i[2] + 1] - sd[i[0], i[1], i[2] - 1]])
+        sd[li[0] + 1, li[1], li[2]] - sd[li[0] - 1, li[1], li[2]],
+        sd[li[0], li[1] + 1, li[2]] - sd[li[0], li[1] - 1, li[2]],
+        sd[li[0], li[1], li[2] + 1] - sd[li[0], li[1], li[2] - 1]])
     n = np.linalg.norm(g)
     return g / n if n > 1e-12 else np.array([0.0, 0.0, 1.0])
 

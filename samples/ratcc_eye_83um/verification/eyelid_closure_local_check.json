@@ -1,0 +1,23 @@
+{
+  "open": {
+    "n_retina_voxels": 27455,
+    "median_A_per_A": 134861.0549259544,
+    "p95_A_per_A": 367472.82743229903,
+    "max_A_per_A": 1069984.6344255593,
+    "iterations": 25,
+    "residual": 6.344442245551816e-08,
+    "seconds_total": 49.1
+  },
+  "closed": {
+    "n_retina_voxels": 27455,
+    "median_A_per_A": 134861.13332089296,
+    "p95_A_per_A": 367472.5142538647,
+    "max_A_per_A": 1069988.0555229927,
+    "iterations": 25,
+    "residual": 6.362210457642566e-08,
+    "seconds_total": 54.0
+  },
+  "raw_field_max_abs_diff": 287.0605693222552,
+  "raw_field_n_differing_gt_1e-9": 6150474,
+  "retina_median_ratio_closed_over_open": 1.0000005813015374
+}

@@ -221,6 +221,114 @@ def test_qc_flags_shorted_electrodes_and_overwrite_policy():
     assert qc2[0].n_voxels == 0 and qc2[0].n_blocked > 0
 
 
+def _skin_over_bulk(n=24, dx=1e-4):
+    """A box split into two materials: bulk (1) for z < n//2, skin (2) for
+    z >= n//2 -- enough to place an electrode resting on the skin surface,
+    embedded inside it, or nowhere near it."""
+    lib = MaterialLibrary()
+    lib.add(Material.isotropic_rho(1, 1.0, name="bulk"))
+    lib.add(Material.isotropic_rho(2, 1.0, name="skin"))
+    model = VoxelModel.empty((n, n, n), dx, lib, background=1, name="skin_over_bulk")
+    model.labels[:, :, n // 2:] = 2
+    return model
+
+
+def test_contact_mode_surface_vs_inserted_vs_floating():
+    SKIN = 2
+    n = 24
+    model = _skin_over_bulk(n)
+    grid = Grid.from_model(model)
+    # resting on the skin from below: electrode paints bulk (1) voxels whose
+    # exposed top face borders skin (2) -- a "surface" contact.
+    pad_surface = Box([0.3, 0.3, 0.08]).place(
+        grid.centers_mm([n // 2, n // 2, n // 2 - 1]), (0, 0, 1))
+    # embedded in the skin itself -- an "inserted" contact.
+    pad_inserted = Box([0.3, 0.3, 0.08]).place(
+        grid.centers_mm([n // 2, n // 2, n // 2 + 1]), (0, 0, 1))
+    # deep in the bulk, nowhere near the skin -- "floating" w.r.t. skin.
+    pad_floating = Box([0.3, 0.3, 0.08]).place(
+        grid.centers_mm([n // 2, n // 2, 2]), (0, 0, 1))
+    _, qc = register(model, [
+        ElectrodeSpec("surf", region=pad_surface, role="source", label=101,
+                     overwrite="any", waveform="I"),
+        ElectrodeSpec("ins", region=pad_inserted, role="source", label=102,
+                     overwrite="any", waveform="I"),
+        ElectrodeSpec("floaty", region=pad_floating, role="source", label=103,
+                     overwrite="any", waveform="I")])
+    surf, ins, floaty = qc
+    assert surf.n_voxels > 0 and ins.n_voxels > 0 and floaty.n_voxels > 0
+
+    assert surf.contact_mode(SKIN) == "surface"
+    assert surf.check_contact(SKIN, mode="surface").ok
+    assert not surf.check_contact(SKIN, mode="inserted").ok
+
+    assert ins.contact_mode(SKIN) == "inserted"
+    assert ins.check_contact(SKIN, mode="inserted").ok
+    assert not ins.check_contact(SKIN, mode="surface").ok
+
+    assert floaty.contact_mode(SKIN) == "floating"
+    r = floaty.check_contact(SKIN, mode="surface")
+    assert not r.ok and "gap" in r.reason
+
+
+def test_safety_report_flags_a_thread_electrode_as_the_riskiest_geometry():
+    """Same charge, wildly different area -- the riskiest real montage in
+    docs/CLINICAL_ELECTRODES.md (the OkuEl thread, ~5 mm^2) vs. a broad skin
+    pad (~75 mm^2, the VIRON return) should not land on the same side of a
+    Shannon line by accident."""
+    from neuroam.safety import safety_report, SHANNON_CONSERVATIVE, shannon_k
+
+    model = _tissue(24)
+    grid = Grid.from_model(model)
+    thread = Cylinder(0.05, 3.0).place(grid.centers_mm([12, 12, 12]), (1, 0, 0))
+    pad = Cylinder(1.5, 0.1).place(grid.centers_mm([12, 12, 2]), (0, 0, 1))
+    _, qc = register(model, [
+        ElectrodeSpec("thread", region=thread, role="source", label=101, waveform="I"),
+        ElectrodeSpec("pad", region=pad, role="source", label=102, waveform="I")])
+    thread_qc, pad_qc = qc
+    assert thread_qc.surface_area_mm2 < pad_qc.surface_area_mm2
+
+    amp_A, pw_s = 1e-3, 5e-3        # TES-GPS's own worst case: 1 mA, 5 ms/phase
+    rep_thread = safety_report(thread_qc, amp_A, pw_s, SHANNON_CONSERVATIVE)
+    rep_pad = safety_report(pad_qc, amp_A, pw_s, SHANNON_CONSERVATIVE)
+    assert rep_thread.k > rep_pad.k                  # smaller area -> higher k
+    assert rep_thread.margin_db < rep_pad.margin_db   # less headroom
+    assert shannon_k(1.0, 1.0) == 0.0                # 1 uC over 1 cm^2 -> k=0
+
+
+def test_close_eyelid_paints_skin_over_the_exposed_cornea_only():
+    from neuroam.electrodes import close_eyelid
+
+    n, dx = 60, 1e-4
+    lib = MaterialLibrary()
+    lib.add(Material.isotropic_rho(1, 1.0, name="bulk"))
+    lib.add(Material.isotropic_rho(66, 1.0, name="cornea"))
+    model = VoxelModel.empty((n, n, n), dx, lib, background=0, name="eye")
+    ctr = np.array([n / 2, n / 2, n / 2])
+    grid = Grid.from_model(model)
+    globe_r_mm = 1.5
+    cornea = SphericalCap(globe_r_mm, 0.2, 40.0).place(grid.centers_mm(ctr), (0, 0, 1))
+    idx, _, _ = rasterize(cornea, grid)
+    model.labels[idx[:, 0], idx[:, 1], idx[:, 2]] = 66
+
+    class _Frame:
+        origin_mm = grid.centers_mm(ctr)
+        e3 = np.array([0.0, 0.0, 1.0])
+
+    before_air = int((model.labels == 0).sum())
+    n_painted = close_eyelid(model, _Frame(), apex_radius_mm=globe_r_mm,
+                             theta_max_deg=40.0, thickness_mm=0.2, skin_label=13)
+    assert n_painted > 0
+    assert int((model.labels == 13).sum()) == n_painted
+    assert int((model.labels == 0).sum()) == before_air - n_painted
+    # the cornea itself must be untouched
+    assert int((model.labels == 66).sum()) == len(idx)
+    # calling it again on the now-closed model should mostly no-op (no air left there)
+    n_second = close_eyelid(model, _Frame(), apex_radius_mm=globe_r_mm,
+                            theta_max_deg=40.0, thickness_mm=0.2, skin_label=13)
+    assert n_second < n_painted
+
+
 def test_overlay_roundtrip_equals_a_baked_model(tmp_path):
     model = _tissue(24)
     grid = Grid.from_model(model)

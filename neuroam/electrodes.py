@@ -27,6 +27,13 @@ volume, connected components, exposed surface area, which tissues it actually
 touches, overlap with other electrodes, and -- the check that would have
 caught the legacy ``sample.in`` ground-node bug -- whether the terminal node
 is genuinely inside the electrode it claims to drive.
+
+:meth:`ElectrodeQC.check_contact` verifies which of two physically distinct
+placements a spec actually produced -- ``"surface"`` (resting on a tissue,
+e.g. a skin pad) vs. ``"inserted"`` (the footprint itself replaces that
+tissue, e.g. a subdermal or intracorneal contact) -- rather than assuming the
+geometry spec did what it was meant to. See ``neuroam.safety`` for the
+charge-density safety check this QC feeds into.
 """
 
 from __future__ import annotations
@@ -48,10 +55,10 @@ from .geometry import (Grid, Region, SDF, MaskRegion, rasterize,
 from .materials import Material, METAL_RHO, INSULATOR_RHO
 from .model import VoxelModel, Source, node_name
 
-__all__ = ["ElectrodeSpec", "ElectrodeQC", "Overlay", "Montage", "Terminal",
-           "register", "region_from_spec", "electrode_nodes", "central_node",
-           "dice", "compare_masks", "fit_sphere", "fit_spherical_band",
-           "fit_tube_path", "refine_by_dice"]
+__all__ = ["ElectrodeSpec", "ElectrodeQC", "ContactCheck", "Overlay", "Montage",
+           "Terminal", "register", "region_from_spec", "electrode_nodes",
+           "central_node", "dice", "compare_masks", "fit_sphere",
+           "fit_spherical_band", "fit_tube_path", "refine_by_dice"]
 
 _EPS = 1e-12
 
@@ -133,6 +140,12 @@ class ElectrodeQC:
     n_terminal_nodes: int
     terminal_inside: bool
     warnings: List[str] = field(default_factory=list)
+    replaced_by_label: Dict[int, int] = field(default_factory=dict)
+    """What tissue occupied the electrode's *own* footprint before painting
+    (voxel counts, pre-overwrite) -- the "inserted into" signal, distinct
+    from :attr:`contact_by_label` (what borders the painted footprint from
+    outside -- the "resting on" signal). Together these are what
+    :meth:`contact_mode` and :meth:`check_contact` classify."""
 
     def charge_density(self, current_A: float, pulse_width_s: float) -> float:
         """Charge density per phase in uC/cm^2 over the exposed surface."""
@@ -146,6 +159,67 @@ class ElectrodeQC:
         if self.surface_area_mm2 <= 0:
             return float("nan")
         return abs(current_A) / (self.surface_area_mm2 * 1e-6)
+
+    def contact_mode(self, target_label: int, min_fraction: float = 0.3) -> str:
+        """How this electrode relates to ``target_label`` tissue.
+
+        - ``"inserted"``  -- the electrode's own footprint *replaced*
+          ``target_label`` voxels (``replaced_by_label``) for at least
+          ``min_fraction`` of its volume: a subdermal/intracorneal contact.
+        - ``"surface"``   -- ``target_label`` borders the painted footprint
+          (``contact_by_label``) but the electrode did not replace it: a
+          contact resting on top of the tissue.
+        - ``"floating"``  -- ``target_label`` appears in neither: there is
+          an air/gap buffer (or some other tissue) between the electrode and
+          this target, so it is not actually contacting it at all.
+        - ``"absent"``    -- the electrode itself painted 0 voxels (see
+          ``warnings``); no contact judgement is possible.
+        """
+        if self.n_voxels == 0:
+            return "absent"
+        n_replaced = self.replaced_by_label.get(target_label, 0)
+        if self.n_voxels and n_replaced / self.n_voxels >= min_fraction:
+            return "inserted"
+        if self.contact_by_label.get(target_label, 0) > 0:
+            return "surface"
+        return "floating"
+
+    def check_contact(self, target_label: int, mode: str = "surface",
+                      min_area_mm2: float = 0.0, min_fraction: float = 0.3
+                      ) -> "ContactCheck":
+        """Verify this electrode is actually in the requested contact mode
+        with ``target_label`` -- the check the user-facing request asked
+        for: "make sure the electrode is completely touching the skin, or
+        inside it" as two distinct, checkable scenarios, not an assumption
+        baked into the geometry spec.
+
+        ``mode``: ``"surface"`` (resting on ``target_label``, not replacing
+        it) or ``"inserted"`` (the footprint itself is carved out of
+        ``target_label``). Returns a :class:`ContactCheck`; nothing raises --
+        inspect ``.ok`` and ``.reason``, or use it as a QC gate before a
+        solve (see ``neuroam.safety``).
+        """
+        actual = self.contact_mode(target_label, min_fraction=min_fraction)
+        area = self.contact_area_mm2.get(target_label, 0.0)
+        if mode not in ("surface", "inserted"):
+            raise ValueError(f"mode must be 'surface' or 'inserted', got {mode!r}")
+        if actual == "absent":
+            ok, reason = False, f"{self.name}: electrode painted 0 voxels"
+        elif actual == "floating":
+            ok, reason = False, (f"{self.name}: not touching label {target_label} at all "
+                                 f"(0 contact area) -- there is a gap")
+        elif actual != mode:
+            ok, reason = False, (f"{self.name}: touches label {target_label} as "
+                                 f"{actual!r}, not the requested {mode!r}")
+        elif mode == "surface" and area < min_area_mm2:
+            ok, reason = False, (f"{self.name}: surface contact area {area:.4g} mm^2 "
+                                 f"is below the required {min_area_mm2:.4g} mm^2")
+        else:
+            ok, reason = True, (f"{self.name}: {actual} contact with label "
+                                f"{target_label}, {area:.4g} mm^2")
+        return ContactCheck(name=self.name, target_label=target_label,
+                            requested_mode=mode, actual_mode=actual,
+                            contact_area_mm2=area, ok=ok, reason=reason)
 
     def summary(self) -> str:
         lo, hi = self.bbox_vox
@@ -162,6 +236,22 @@ class ElectrodeQC:
         for w in self.warnings:
             s += f"\n    !! {w}"
         return s
+
+
+@dataclass
+class ContactCheck:
+    """Result of :meth:`ElectrodeQC.check_contact` -- pass/fail plus why."""
+
+    name: str
+    target_label: int
+    requested_mode: str
+    actual_mode: str
+    contact_area_mm2: float
+    ok: bool
+    reason: str
+
+    def __bool__(self) -> bool:
+        return self.ok
 
 
 # ----------------------------------------------------------------- overlay
@@ -413,6 +503,11 @@ def register(model: VoxelModel, specs: Sequence[ElectrodeSpec],
             member[idx[:, 0], idx[:, 1], idx[:, 2]] = True
             faces, by_label = _exposed(idx, member, base_labels)
             ncomp = _components(idx, model.labels.shape)
+            # what tissue this electrode's own footprint replaced (pre-paint) --
+            # the "inserted into" signal, vs. by_label above (the "rests on")
+            replaced_here = base_labels[idx[:, 0], idx[:, 1], idx[:, 2]]
+            ru, rc = np.unique(replaced_here, return_counts=True)
+            replaced_by_label = {int(k): int(v) for k, v in zip(ru.tolist(), rc.tolist())}
             if ncomp > 1:
                 if spec.terminal == "node":
                     warnings.append(
@@ -436,7 +531,8 @@ def register(model: VoxelModel, specs: Sequence[ElectrodeSpec],
                 contact_area_mm2={k: v * a for k, v in by_label.items()},
                 n_requested=n_req, n_blocked=n_blocked, overlaps=overlaps,
                 terminal_node=term_node, n_terminal_nodes=len(nodes),
-                terminal_inside=inside, warnings=warnings)
+                terminal_inside=inside, warnings=warnings,
+                replaced_by_label=replaced_by_label)
         else:
             qc = ElectrodeQC(
                 name=spec.name, role=spec.role, label=spec.label,
@@ -446,7 +542,7 @@ def register(model: VoxelModel, specs: Sequence[ElectrodeSpec],
                 surface_area_mm2=0.0, contact_by_label={}, contact_area_mm2={},
                 n_requested=n_req, n_blocked=n_blocked, overlaps={},
                 terminal_node=None, n_terminal_nodes=0, terminal_inside=False,
-                warnings=warnings + ["electrode is empty"])
+                warnings=warnings + ["electrode is empty"], replaced_by_label={})
         qcs.append(qc)
 
     if set_terminals:
@@ -675,6 +771,61 @@ def specs_from_config(entries: Sequence[dict], model: VoxelModel,
 
 
 # --------------------------------------------------------- fitting & compare
+def close_eyelid(model: VoxelModel, frame, apex_radius_mm: float,
+                 theta_max_deg: float, thickness_mm: float = 0.3,
+                 r_offset_mm: float = 0.02, skin_label: int = 13,
+                 overwrite: Sequence[int] = (0,)) -> int:
+    """Paint a thin eyelid-skin shell over the exposed cornea -- the literal
+    "eye closed" anatomy variant: a montage built on the model *before* this
+    call sees an open eye (cornea exposed to air/skin-pad electrodes reach it
+    directly); the identical montage re-registered *after* this call sees the
+    same electrodes now separated from the cornea by a layer of eyelid skin,
+    the way they would be with the lid shut.
+
+    Geometry: a :class:`~neuroam.geometry.SphericalBand` dome (radius
+    ``apex_radius_mm + r_offset_mm``, angular half-width ``theta_max_deg``
+    from the corneal axis -- pass the same limbus angle used to place the
+    montage's own corneal-contact electrodes, so the lid exactly covers the
+    palpebral aperture) centred at the eye frame's origin, oriented along
+    ``frame.e3``. Only relabels voxels currently in ``overwrite`` (background/
+    air by default) to ``skin_label`` -- it never touches the cornea, sclera
+    or an electrode already registered there.
+
+    There is no CT/MRI of a closed rat eyelid to measure a thickness from;
+    ``thickness_mm=0.3`` matches the skin-conform thickness already used
+    elsewhere in this project's clinical electrode designs (the ``pad()``
+    helper in ``examples/07_clinical_analogues.py``), not a literature value
+    for this specific tissue -- treat results from this variant as showing
+    the *direction and rough scale* of the effect of closing the eye, not a
+    validated absolute number.
+
+    Returns the number of voxels relabelled (0 if the geometry landed
+    entirely on existing tissue -- worth checking, not assuming, since an
+    already-closed crop or a wrong ``theta_max_deg`` would silently no-op).
+    """
+    from .geometry import SphericalBand
+    grid = Grid.from_model(model)
+    lid = SphericalBand(radius_mm=apex_radius_mm + r_offset_mm,
+                        thickness_mm=thickness_mm,
+                        theta_max_deg=theta_max_deg).place(frame.origin_mm, frame.e3)
+    idx, _, _ = rasterize(lid, grid)
+    if len(idx) == 0:
+        return 0
+    here = model.labels[idx[:, 0], idx[:, 1], idx[:, 2]]
+    allow = np.isin(here, list(overwrite))
+    idx = idx[allow]
+    if len(idx) == 0:
+        return 0
+    if skin_label not in model.materials:
+        # match whatever resistivity the model already uses for skin, if any
+        existing = [m for m in model.materials if getattr(m, "name", "") and
+                   "skin" in m.name.lower()]
+        rho = existing[0].rho[0] if existing else 4.0
+        model.materials.add(Material.isotropic_rho(skin_label, rho, name="eyelid (closed)"))
+    model.labels[idx[:, 0], idx[:, 1], idx[:, 2]] = skin_label
+    return len(idx)
+
+
 def dice(a: np.ndarray, b: np.ndarray) -> float:
     """Sorensen-Dice overlap of two boolean voxel masks (1.0 = identical)."""
     a = a.astype(bool); b = b.astype(bool)

@@ -1,0 +1,91 @@
+{
+  "config": "VIRON_periorbital_open",
+  "closed_eye": false,
+  "electrodes": [
+    {
+      "name": "E_sup",
+      "role": "source",
+      "n_voxels": 1637,
+      "surface_area_mm2": 10.113052000000001,
+      "centroid_vox": [
+        316.94074526573,
+        370.72632864996945,
+        323.40928527794745
+      ],
+      "bbox_vox": [
+        [
+          310,
+          358,
+          320
+        ],
+        [
+          329,
+          385,
+          325
+        ]
+      ],
+      "contact_by_label": {
+        "0": 946,
+        "9": 43,
+        "13": 479
+      },
+      "replaced_by_label": {
+        "0": 1199,
+        "13": 438
+      },
+      "warnings": [],
+      "skin_contact": {
+        "mode": "surface",
+        "ok": true,
+        "reason": "E_sup: surface contact with label 13, 3.3 mm^2"
+      },
+      "safety": {
+        "amp_A": 0.0003,
+        "pulse_width_s": 0.05,
+        "charge_density_uC_cm2": 148.32317682139868,
+        "current_density_A_m2": 29.664635364279736,
+        "k": 3.347300277779163,
+        "ok": false,
+        "margin_db": -18.473002777791628
+      }
+    },
+    {
+      "name": "RET",
+      "role": "ground",
+      "n_voxels": 3131,
+      "surface_area_mm2": 26.205756000000004,
+      "centroid_vox": [
+        436.73139572021717,
+        257.5480677099968,
+        242.3755988502076
+      ],
+      "bbox_vox": [
+        [
+          406,
+          254,
+          228
+        ],
+        [
+          467,
+          263,
+          253
+        ]
+      ],
+      "contact_by_label": {
+        "0": 1317,
+        "9": 759,
+        "13": 1728
+      },
+      "replaced_by_label": {
+        "0": 1713,
+        "13": 1418
+      },
+      "warnings": [],
+      "skin_contact": {
+        "mode": "inserted",
+        "ok": false,
+        "reason": "RET: touches label 13 as 'inserted', not the requested 'surface'"
+      }
+    }
+  ]
+}

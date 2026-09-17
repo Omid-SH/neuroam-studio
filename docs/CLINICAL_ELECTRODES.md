@@ -292,18 +292,205 @@ Three small additions to v0.2, all tested (`tests/test_electrodes.py`):
   shaped differently) is dropped with a `RuntimeWarning` instead of failing the
   run, so one montage file survives being carried across models.
 
-## 7. Next
+## 7. Done: full-model registration, solve, and comparison (v0.5)
 
-1. **Re-register on the full 912 × 900 × 504 head model.** This is the blocking
-   item: it fixes the returns, restores E4/E5, and confirms §4. Registration
-   is cheap; a solve wants a workstation or CARC (~50–60 GB).
-2. Solve all three and compare on one axis — retinal E_mean per ampere and per
-   *delivered* milliamp — against cases A–E in `docs/VALIDATION.md`. The
-   quantitative form of "does touching the eye matter" is one table.
-3. Use the six basis fields from `VIRON_orbital6` to reproduce VIRON's own
-   optimisation on the rat: maximise current density over a target retinal
-   patch and see whether the 2× the trial reports for a human head survives at
-   rat scale, where the electrodes are proportionally much closer together.
-4. Carry the same three configs to the rabbit and human models for Paper 3.
+Items 1–2 below are complete. Script: `examples/38_solve_clinical_configs.py`
+(registration + solve, one process per config) and
+`examples/39_clinical_config_comparison.py` (the comparison against the
+original 6). A fourth literature design was added along the way, from a
+paper specifically about the eye-closed case (Zhou et al. 2026, *iScience*):
+
+**TpES/TcES — transpalpebral (eyelid) vs. transcorneal, the eye-closed
+question directly.** TpES: four 5 mm human discs on eyelid skin (only the
+superior channel, CH1, is modelled here — see §7.4); scaled to a 1.0 mm
+rat-scale radius (up from the pure-geometric 0.66 mm — see the script's own
+comment for why: the smaller radius doesn't reliably land a supernode
+terminal on the reused mesh). TcES: their own transcorneal control, a
+**flat annular disc** (9.5 mm OD / 8 mm ID, not a wire loop) on the corneal
+surface, `Frame.band(3.36, 18.2, 21.8, 0.10)` at rat scale. Both return at a
+skin site standing in for their neck electrode (this head-only model has no
+literal neck — same honest substitution §5 already makes for other
+returns). Biphasic rectangular pulses, 20 Hz cathodic-first, 10 ms/phase;
+the paper's own reference retinal field (~2–2.3 V/m at 1 mA, human head
+model) is the external sanity check these numbers should land near the same
+order of magnitude as, not an exact target (different species, different
+anatomy).
+
+### 7.1 Eye open vs. closed — modelled literally, and a real bug this
+   surfaced in the first attempt
+
+`neuroam.electrodes.close_eyelid()` paints a thin skin shell
+(`thickness_mm=0.30`, matching this project's existing skin-conform
+convention — not a measured rat-eyelid thickness, no such measurement was
+found in the literature search for this) over the exposed cornea, run as a
+second registration of the same montage. Only the three skin-only
+montages (VIRON_periorbital, VIRON6, TpES) have a physically sensible closed
+variant — TES-GPS and TcES require direct corneal/limbal contact and cannot
+be run with the eye shut.
+
+**The full-head "open"/"closed" pairs in `examples/38` do not actually test
+this at all -- caught only by a direct challenge to re-verify the finding,
+not by anything in the first pass.** `assemble_mrm` (the multires path every
+full-head config uses) takes each mesh element's material id from the
+reused `.mrm` file's own embedded `records[:, 6]`, **never from
+`model.labels`** — confirmed by reading the assembly code directly. That
+mesh was built once, for SCL-ON's original open-eye anatomy, and is frozen;
+`close_eyelid()` paints `model.labels`, which this path never reads for
+bulk tissue. The electrode footprints are also byte-identical between the
+open and closed registrations of every pair (same voxel count, same
+centroid, confirmed from their own registration reports), so there is no
+side channel either. **The full-head open/closed pairs are, numerically,
+the same experiment solved twice.** The small field differences originally
+reported (up to ~5,000 A/m², ~79M of 413M voxels) are the signature of
+ordinary CG/AMG run-to-run non-determinism — the two runs converged in a
+different number of iterations (140 vs. 142 for VIRON_periorbital) with
+different residuals — not an anatomy effect that never reached the solve.
+Read every `_open`/`_closed` pair in §7.2's figure and data as one
+data point duplicated, not two.
+
+**The valid test:** `examples/41_verify_eyelid_closure_local.py`, on the
+small eye-only crop (`RatCC_eye_180_160_220_83um_with_retina`, 6.44M
+voxels) using `assemble_uniform`, which builds G directly from
+`model.labels` every time — no static mesh in between, so the eyelid
+closure genuinely reaches the solve here. Same VIRON_periorbital electrode
+geometry as `examples/07`. Result:
+
+| | open | closed |
+|---|---|---|
+| retina median \|J\| (A/m², per amp) | 134,861.05 | 134,861.13 |
+| CG iterations | 25 | 25 |
+| residual | 6.34e-08 | 6.36e-08 |
+
+Retina median ratio (closed/open): **1.0000006** — genuinely, validly
+unchanged this time (matching iteration counts, not the mismatched 140/142
+above, is itself a sign this comparison is well-posed). The raw field does
+differ by a real, non-trivial amount close to the eyelid (max 287 A/m²,
+~6.15M of 6.42M voxels differ at all, consistent with a small but genuine
+perturbation spreading from the 568-voxel patch) — but 287 A/m² is ~0.2% of
+the retina's own typical magnitude (~134,861), and it doesn't move the
+retina dose. The original qualitative conclusion — *eye state matters near
+the eye, not for the bulk retinal dose a periorbital electrode delivers* —
+turns out to be correct, but only this local-crop check actually establishes
+it; the full-head pairs never tested it.
+
+### 7.2 Comparison against the original 6 configs
+
+`examples/39_clinical_config_comparison.py` — median `|J|` (A/m²) at each
+config's **own paper-cited clinical amplitude** (not the original 6's 200 µA
+convention; different real devices, different real doses — matching them
+would misrepresent both):
+
+| config | central retina | peripheral retina | occipital | dose |
+|---|---|---|---|---|
+| SCL-ON | 98.4 | 33.2 | 0.0024 | 200 µA |
+| SCL-IntraCranial | 4.73 | 19.2 | 0.151 | 200 µA |
+| SCL-TransCranial | 5.27 | 18.9 | 0.091 | 200 µA |
+| ON-IntraCranial | 12.6 | 10.9 | 0.143 | 200 µA |
+| ON-TransCranial | 13.3 | 11.5 | 0.098 | 200 µA |
+| IntraCranial-TransCranial | 0.72 | 0.70 | 0.218 | 200 µA |
+| **TES-GPS** | 86.7 | 139 | 0.032 | 1 mA |
+| **VIRON periorbital** (open/closed) | 22.6 | 24.4 | 0.043 | 300 µA |
+| **VIRON6** (open/closed) | 22.9 | 24.1 | 0.341 | 300 µA |
+| **TpES** (open/closed) | 400 | 426 | 1.07 | 4.8 mA |
+| **TcES** | 39.9 | 86.4 | 0.208 | 1 mA |
+
+Figure: `samples/ratcc_eye_83um/verification/views/clinical_config_comparison.png`.
+Full per-config numbers (including the per-ampere, dose-independent values):
+`samples/ratcc_eye_83um/verification/clinical/config_comparison.json`.
+
+At their own clinical doses, every literature design reaches central-retina
+current density comparable to or higher than most of the original 6 at 200 µA
+— unsurprising since their currents are 1.5–24× higher and periorbital
+electrodes are much smaller (higher local current density) than the ring/plate
+returns the original 6 use. TpES's headline retinal number is driven by its
+4.8 mA upper test bound, the highest tested in its own source paper, not a
+typical operating point.
+
+### 7.3 Charge-density safety (Shannon criterion)
+
+`neuroam/safety.py` implements Shannon's `k = log10(Q^2/A)` screening
+criterion (k≤1.5 conservative, ~1.75 the looser DBS-convention line) and
+scores every source electrode at its own registration
+(`examples/38`'s own console output, and each config's
+`*_registration_report.json` under `samples/ratcc_eye_83um/verification/clinical/`):
+
+| config | electrode area | amp × phase width | k | vs. k≤1.5 |
+|---|---|---|---|---|
+| TES-GPS (OkuEl) | 5.47 mm² | 1 mA × 5 ms | 2.660 | **−11.6 dB over** |
+| VIRON periorbital (E_sup) | 10.1 mm² | 300 µA × 50 ms | 3.347 | **−18.5 dB over** |
+| TpES (CH1) | 9.14 mm² | 4.8 mA × 10 ms | 4.402 | **−29.0 dB over** |
+| TcES (ring) | 5.48 mm² | 1 mA × 10 ms | 3.261 | **−17.6 dB over** |
+
+**Every one of these is over the conservative Shannon line, by 12–29 dB.**
+This is not a modelling artefact to explain away — it is the direct,
+literal consequence of the project's own established scaling convention
+(`docs/CLINICAL_ELECTRODES.md` §3: *"Currents are not scaled"*): a human
+electrode's clinical current, carried unchanged onto a geometrically
+scaled-down (area × k² ≈ 0.069) rat electrode, multiplies the charge density
+by roughly the same factor the area shrank by. None of the original human
+trials are unsafe at their own scale — the mismatch is purely an artefact of
+preserving absolute current across a species-scale change. A rat experiment
+built from these numbers would need the current scaled down (by area, or to
+a matched charge density) to stay under the same line the human protocol
+respects; this repo's own dose convention leaves that choice to whoever
+runs the experiment, which is exactly why the safety check exists as a
+separate, explicit step rather than an assumption baked into "same current,
+smaller electrode."
+
+### 7.4 Electrode contact verification (surface vs. inserted)
+
+`ElectrodeQC.check_contact()` (built on a new `replaced_by_label` QC signal,
+alongside the existing `contact_by_label`) classifies every electrode as
+**surface** (rests on the target tissue), **inserted** (its own footprint
+replaces the target tissue — true here of most pads, by construction: the
+`conform` step's `offset_mm=-0.10` deliberately drapes 0.1 mm into the skin,
+modelling conductive gel/paste bridging the stratum corneum, per §5.4's own
+existing note), or **floating** (no contact at all — a real placement bug,
+not a modelling choice). Every one of the 8 registrations was checked before
+solving; none floated. See `neuroam/electrodes.py`'s `close_eyelid`,
+`ElectrodeQC.check_contact`/`contact_mode`, and `ContactCheck`.
+
+### 7.5 Honest limits of this pass
+
+- **TpES models one channel (CH1, superior), not all four independently, and
+  VIRON6 models one cup (E1) against the full 6-cup array's own return, not
+  all six simultaneously or the true 6-basis-field optimisation.** Both are
+  documented, deliberate scope cuts — the underlying superposition machinery
+  (`neuroam.solver.superpose`) supports building the full basis-field set
+  later; it is 4–6× the solve time this pass budgeted for, and (for VIRON6)
+  the real clinical protocol it's modelled on also drives one cup at a time,
+  not all six.
+- **The reused SCL-ON `.mrm` mesh is not re-optimised for these new,
+  spatially separate electrodes** — same caveat §5 already raises for the
+  small-crop designs, now on the full model. One electrode (TpES's CH1) was
+  large enough to need bumping past its pure-geometric size specifically to
+  land a valid terminal node on this mesh; watch for this on any future
+  config placed somewhere this mesh is coarse.
+- **The reused static mesh has a sharper consequence than "not re-optimised"
+  for anything that changes bulk tissue rather than electrode placement**
+  (§7.1): it is *completely blind* to any `model.labels` change outside a
+  registered electrode's own footprint. Every `_open`/`_closed` pair in this
+  pass's full-head results is the identical experiment solved twice, not two
+  anatomies — only `examples/41`'s small-crop `assemble_uniform` check is a
+  valid test of an anatomy change. Any future full-head anatomy edit (not
+  just eyelid closure) needs the same local-crop-with-uniform-assembly
+  treatment, or a re-meshed `.mrm`, to actually reach the solve.
+- **"Neck" doesn't exist in this head-only crop** for TpES/TcES's return —
+  substituted with a distant skin site, same honest limitation §5 already
+  documents for other configs' returns.
+- The Shannon criterion is a screening heuristic fit to cortical/nerve
+  damage thresholds, not a validated line for cornea/sclera/eyelid tissue —
+  treat the −12 to −29 dB figures as "clearly outside the well-characterised
+  safe region," not as a precise, tissue-specific risk quantification.
+
+## 8. Next
+
+1. Full `VIRON_orbital6` basis-field decomposition (6 independent solves) to
+   reproduce VIRON's own current-density optimisation at rat scale, and all
+   four TpES channels independently, per §7.5.
+2. Carry the validated configs to the rabbit and human models for Paper 3.
    The clinical numbers live in `configs/clinical_electrode_parameters.json`
    unscaled, so only `k` changes.
+3. A literal rat-eyelid-thickness measurement (histology or a literature
+   value found by a more targeted search) would replace §7.1's borrowed
+   0.30 mm skin-conform thickness with a validated one.

@@ -1,0 +1,275 @@
+{
+  "config": "VIRON6_closed",
+  "closed_eye": true,
+  "electrodes": [
+    {
+      "name": "E1",
+      "role": "source",
+      "n_voxels": 1637,
+      "surface_area_mm2": 10.113052000000001,
+      "centroid_vox": [
+        316.94074526573,
+        370.72632864996945,
+        323.40928527794745
+      ],
+      "bbox_vox": [
+        [
+          310,
+          358,
+          320
+        ],
+        [
+          329,
+          385,
+          325
+        ]
+      ],
+      "contact_by_label": {
+        "0": 946,
+        "9": 43,
+        "13": 479
+      },
+      "replaced_by_label": {
+        "0": 1199,
+        "13": 438
+      },
+      "warnings": [],
+      "skin_contact": {
+        "mode": "surface",
+        "ok": true,
+        "reason": "E1: surface contact with label 13, 3.3 mm^2"
+      }
+    },
+    {
+      "name": "E2",
+      "role": "source",
+      "n_voxels": 1796,
+      "surface_area_mm2": 15.169578000000003,
+      "centroid_vox": [
+        275.4860801781737,
+        412.4292873051225,
+        271.8880846325167
+      ],
+      "bbox_vox": [
+        [
+          269,
+          396,
+          258
+        ],
+        [
+          282,
+          426,
+          288
+        ]
+      ],
+      "contact_by_label": {
+        "0": 1337,
+        "12": 68,
+        "13": 797
+      },
+      "replaced_by_label": {
+        "0": 1255,
+        "13": 541
+      },
+      "warnings": [],
+      "skin_contact": {
+        "mode": "inserted",
+        "ok": false,
+        "reason": "E2: touches label 13 as 'inserted', not the requested 'surface'"
+      }
+    },
+    {
+      "name": "E3",
+      "role": "source",
+      "n_voxels": 2326,
+      "surface_area_mm2": 13.598886000000002,
+      "centroid_vox": [
+        125.00816852966466,
+        533.2050730868443,
+        97.20636285468616
+      ],
+      "bbox_vox": [
+        [
+          123,
+          518,
+          82
+        ],
+        [
+          128,
+          548,
+          113
+        ]
+      ],
+      "contact_by_label": {
+        "0": 1040,
+        "13": 934
+      },
+      "replaced_by_label": {
+        "0": 1538,
+        "13": 788
+      },
+      "warnings": [],
+      "skin_contact": {
+        "mode": "inserted",
+        "ok": false,
+        "reason": "E3: touches label 13 as 'inserted', not the requested 'surface'"
+      }
+    },
+    {
+      "name": "E4",
+      "role": "source",
+      "n_voxels": 1237,
+      "surface_area_mm2": 12.207308000000001,
+      "centroid_vox": [
+        327.7712206952304,
+        347.77849636216655,
+        92.75424413904608
+      ],
+      "bbox_vox": [
+        [
+          318,
+          340,
+          82
+        ],
+        [
+          341,
+          355,
+          110
+        ]
+      ],
+      "contact_by_label": {
+        "0": 697,
+        "9": 216,
+        "13": 859
+      },
+      "replaced_by_label": {
+        "0": 668,
+        "13": 569
+      },
+      "warnings": [
+        "2 electrically separate pieces (tied together by the supernode terminal)"
+      ],
+      "skin_contact": {
+        "mode": "inserted",
+        "ok": false,
+        "reason": "E4: touches label 13 as 'inserted', not the requested 'surface'"
+      }
+    },
+    {
+      "name": "E5",
+      "role": "source",
+      "n_voxels": 2014,
+      "surface_area_mm2": 13.543774000000003,
+      "centroid_vox": [
+        503.5069513406157,
+        151.8098311817279,
+        74.02383316782522
+      ],
+      "bbox_vox": [
+        [
+          498,
+          137,
+          58
+        ],
+        [
+          508,
+          164,
+          89
+        ]
+      ],
+      "contact_by_label": {
+        "0": 1202,
+        "13": 764
+      },
+      "replaced_by_label": {
+        "0": 1386,
+        "13": 628
+      },
+      "warnings": [],
+      "skin_contact": {
+        "mode": "inserted",
+        "ok": false,
+        "reason": "E5: touches label 13 as 'inserted', not the requested 'surface'"
+      }
+    },
+    {
+      "name": "E6",
+      "role": "source",
+      "n_voxels": 1235,
+      "surface_area_mm2": 11.325516000000002,
+      "centroid_vox": [
+        368.98866396761133,
+        312.4153846153846,
+        287.6704453441296
+      ],
+      "bbox_vox": [
+        [
+          355,
+          303,
+          280
+        ],
+        [
+          385,
+          328,
+          295
+        ]
+      ],
+      "contact_by_label": {
+        "0": 730,
+        "9": 271,
+        "13": 643
+      },
+      "replaced_by_label": {
+        "0": 754,
+        "13": 481
+      },
+      "warnings": [],
+      "skin_contact": {
+        "mode": "inserted",
+        "ok": false,
+        "reason": "E6: touches label 13 as 'inserted', not the requested 'surface'"
+      }
+    },
+    {
+      "name": "C1",
+      "role": "ground",
+      "n_voxels": 4450,
+      "surface_area_mm2": 37.29704600000001,
+      "centroid_vox": [
+        599.5674157303371,
+        529.6939325842696,
+        398.3330337078652
+      ],
+      "bbox_vox": [
+        [
+          593,
+          499,
+          364
+        ],
+        [
+          606,
+          558,
+          426
+        ]
+      ],
+      "contact_by_label": {
+        "0": 2311,
+        "12": 347,
+        "13": 2624,
+        "9": 132
+      },
+      "replaced_by_label": {
+        "0": 2541,
+        "13": 1909
+      },
+      "warnings": [
+        "4 electrically separate pieces (tied together by the supernode terminal)"
+      ],
+      "skin_contact": {
+        "mode": "inserted",
+        "ok": false,
+        "reason": "C1: touches label 13 as 'inserted', not the requested 'surface'"
+      }
+    }
+  ]
+}

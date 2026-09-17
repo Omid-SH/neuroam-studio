@@ -1,0 +1,93 @@
+{
+  "config": "TpES_open",
+  "closed_eye": false,
+  "electrodes": [
+    {
+      "name": "TpES_CH1",
+      "role": "source",
+      "n_voxels": 1127,
+      "surface_area_mm2": 9.134814000000002,
+      "centroid_vox": [
+        308.5536823425022,
+        365.9086069210293,
+        311.963620230701
+      ],
+      "bbox_vox": [
+        [
+          298,
+          355,
+          307
+        ],
+        [
+          320,
+          378,
+          314
+        ]
+      ],
+      "contact_by_label": {
+        "0": 461,
+        "9": 233,
+        "13": 632
+      },
+      "replaced_by_label": {
+        "0": 611,
+        "13": 516
+      },
+      "warnings": [],
+      "skin_contact": {
+        "mode": "inserted",
+        "ok": false,
+        "reason": "TpES_CH1: touches label 13 as 'inserted', not the requested 'surface'"
+      },
+      "safety": {
+        "amp_A": 0.0048,
+        "pulse_width_s": 0.01,
+        "charge_density_uC_cm2": 525.4622590016609,
+        "current_density_A_m2": 525.462259001661,
+        "k": 4.401782765930272,
+        "ok": false,
+        "margin_db": -29.017827659302718
+      }
+    },
+    {
+      "name": "NECK",
+      "role": "ground",
+      "n_voxels": 12196,
+      "surface_area_mm2": 85.795606,
+      "centroid_vox": [
+        449.63242046572645,
+        502.0072154804854,
+        54.265660872417186
+      ],
+      "bbox_vox": [
+        [
+          394,
+          456,
+          34
+        ],
+        [
+          494,
+          544,
+          76
+        ]
+      ],
+      "contact_by_label": {
+        "0": 7909,
+        "9": 510,
+        "13": 4035
+      },
+      "replaced_by_label": {
+        "0": 9002,
+        "13": 3194
+      },
+      "warnings": [
+        "4 electrically separate pieces (tied together by the supernode terminal)"
+      ],
+      "skin_contact": {
+        "mode": "surface",
+        "ok": true,
+        "reason": "NECK: surface contact with label 13, 27.8 mm^2"
+      }
+    }
+  ]
+}

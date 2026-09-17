@@ -24,3 +24,16 @@ neuroam-am-viz-update.tar.gz
 samples/ratcc_eye_83um/*_912_900_504_*.model
 samples/ratcc_eye_83um/*_912_900_504_*.mrm
 samples/ratcc_eye_83um/*_912_900_504_*.vof
+
+# same reason, same full-head grid -- examples/38's per-config solve outputs
+# (~620-650 MB each, one per clinical config): regenerate via
+# examples/38_solve_clinical_configs.py <config_key>
+samples/ratcc_eye_83um/clinical_*.vof
+
+# interactive plotly electrode views (examples/42) -- each embeds raw
+# marching-cubes mesh data as uncompressed JSON text (up to ~90 MB/file,
+# ~600 MB total across the 15 configs) with no bound on how large a future
+# re-render grows; regenerate locally via
+# examples/42_electrode_3d_placement.py instead of committing them
+samples/ratcc_eye_83um/verification/views/electrode_3d/
+samples/ratcc_eye_83um/verification/views/electrode_placement_3d_grid.html

@@ -1,0 +1,92 @@
+{
+  "config": "SCL_Wrist",
+  "closed_eye": false,
+  "electrodes": [
+    {
+      "name": "SCL",
+      "role": "source",
+      "n_voxels": 1144,
+      "surface_area_mm2": 16.478488000000002,
+      "centroid_vox": [
+        301.85664335664336,
+        358.0524475524476,
+        241.03146853146853
+      ],
+      "bbox_vox": [
+        [
+          278,
+          334,
+          208
+        ],
+        [
+          325,
+          381,
+          273
+        ]
+      ],
+      "contact_by_label": {
+        "9": 188,
+        "12": 56,
+        "13": 448,
+        "33": 64,
+        "55": 320,
+        "66": 1308,
+        "0": 8
+      },
+      "replaced_by_label": {
+        "101": 1144
+      },
+      "warnings": [],
+      "safety": {
+        "amp_A": 0.0002,
+        "pulse_width_s": 0.005,
+        "charge_density_uC_cm2": 6.068517936839837,
+        "current_density_A_m2": 12.137035873679672,
+        "k": 0.7830826399314791,
+        "ok": true,
+        "margin_db": 7.169173600685208
+      }
+    },
+    {
+      "name": "WRIST",
+      "role": "ground",
+      "n_voxels": 27132,
+      "surface_area_mm2": 178.93488600000003,
+      "centroid_vox": [
+        125.19482529854047,
+        534.984888692319,
+        105.83550788736547
+      ],
+      "bbox_vox": [
+        [
+          123,
+          426,
+          58
+        ],
+        [
+          128,
+          640,
+          169
+        ]
+      ],
+      "contact_by_label": {
+        "0": 10626,
+        "9": 2584,
+        "13": 12656,
+        "12": 108
+      },
+      "replaced_by_label": {
+        "0": 16531,
+        "13": 10601
+      },
+      "warnings": [
+        "2 electrically separate pieces (tied together by the supernode terminal)"
+      ],
+      "skin_contact": {
+        "mode": "inserted",
+        "ok": false,
+        "reason": "WRIST: touches label 13 as 'inserted', not the requested 'surface'"
+      }
+    }
+  ]
+}

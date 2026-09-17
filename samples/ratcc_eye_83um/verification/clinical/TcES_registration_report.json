@@ -1,0 +1,88 @@
+{
+  "config": "TcES",
+  "closed_eye": false,
+  "electrodes": [
+    {
+      "name": "TcES_ring",
+      "role": "source",
+      "n_voxels": 218,
+      "surface_area_mm2": 5.483644000000001,
+      "centroid_vox": [
+        292.1697247706422,
+        348.1697247706422,
+        241.0
+      ],
+      "bbox_vox": [
+        [
+          282,
+          338,
+          227
+        ],
+        [
+          303,
+          359,
+          255
+        ]
+      ],
+      "contact_by_label": {
+        "13": 173,
+        "66": 608,
+        "0": 15
+      },
+      "replaced_by_label": {
+        "13": 36,
+        "66": 182
+      },
+      "warnings": [],
+      "safety": {
+        "amp_A": 0.001,
+        "pulse_width_s": 0.01,
+        "charge_density_uC_cm2": 182.36048875528752,
+        "current_density_A_m2": 182.36048875528752,
+        "k": 3.260930747510183,
+        "ok": false,
+        "margin_db": -17.60930747510183
+      }
+    },
+    {
+      "name": "NECK",
+      "role": "ground",
+      "n_voxels": 12196,
+      "surface_area_mm2": 85.795606,
+      "centroid_vox": [
+        449.63242046572645,
+        502.0072154804854,
+        54.265660872417186
+      ],
+      "bbox_vox": [
+        [
+          394,
+          456,
+          34
+        ],
+        [
+          494,
+          544,
+          76
+        ]
+      ],
+      "contact_by_label": {
+        "0": 7909,
+        "9": 510,
+        "13": 4035
+      },
+      "replaced_by_label": {
+        "0": 9002,
+        "13": 3194
+      },
+      "warnings": [
+        "4 electrically separate pieces (tied together by the supernode terminal)"
+      ],
+      "skin_contact": {
+        "mode": "surface",
+        "ok": true,
+        "reason": "NECK: surface contact with label 13, 27.8 mm^2"
+      }
+    }
+  ]
+}
