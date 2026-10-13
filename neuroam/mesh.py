@@ -1,8 +1,7 @@
 """Multiresolution mesh (.mrm) utilities.
 
-NeuroAM does not reimplement the clustering mesher; it consumes ``.mrm``
-files produced by the lab's mesher (``mesher.exe`` / ``mesher_CARC`` or the
-pure-Python ``Mesher/mesher.py`` from the unreleased repo).  This module
+NeuroAM does not reimplement the clustering mesher; it consumes compatible
+``.mrm`` files produced by an external multiresolution mesher. This module
 reads/writes the record format and can generate the trivial all-unit-voxel
 mesh from a model (useful for equivalence tests and small models).
 

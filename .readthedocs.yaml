@@ -14,8 +14,6 @@ python:
   install:
     - requirements: docs/requirements.txt
 
-# The package itself (neuroam) is NOT installed here on purpose: autodoc
-# only needs `neuroam` importable, which requires numpy/scipy/matplotlib
-# (already in docs/requirements.txt) — not a `pip install -e .`, and
-# definitely not NEURON, which has no wheel and would need a full compile
-# step this build environment doesn't need to pay for.
+# The source tree is added to Python's import path by docs/conf.py. Optional
+# compiled integrations are mocked for API extraction and are not needed by
+# the documentation build.

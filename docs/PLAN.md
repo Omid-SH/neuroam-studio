@@ -1,5 +1,10 @@
 # NeuroAM Studio — architecture plan (v0.1)
 
+> **Historical planning record.** This page is retained for provenance and is
+> excluded from the public documentation build. See
+> [Architecture](ARCHITECTURE.md), [Detailed design](DESIGN.md), and
+> [Scope and limitations](LIMITATIONS.md) for the maintained documentation.
+
 Goal: an **ASCENT-style, config-driven, open pipeline** for multiscale neural-stimulation
 modeling built on the lab's Admittance Method (AM) lineage (Cela/Lazzi 3D multiresolution
 Impedance Method), with **direct sparse assembly** (no text netlist), reusable unit-current

@@ -1,9 +1,10 @@
-# Legacy file formats (digested)
+# Legacy file formats
 
-Primary reference: *Multi-resolution 3D Impedance Method — Implementation
-reference and notes*, Carlos J. Cela (BEML / Lazzi group), V0.99.9 — the PDF in
-`Python-AM_NEURON-Unreleased/Admittance Method/Documents/`.  Everything below was
-additionally verified against real files in the lab folders.
+This page documents the file conventions supported for interoperability with
+established Admittance Method and NEURON workflows. The primary technical
+reference is Carlos J. Cela, *Multi-resolution 3D Impedance Method —
+Implementation Reference and Notes*, version 0.99.9. The conventions below
+have also been verified against the reference datasets used in the test suite.
 
 ## `.in` — simulation parameter file
 Plain ASCII, one declaration per line; `#`/`%` start comments.
@@ -22,7 +23,7 @@ Plain ASCII, one declaration per line; `#`/`%` start comments.
 | `defaultmaterial id` | fallback for labels missing from the material list |
 
 ## `.model` / `.mat` — voxel labels
-ASCII integers. The lab's `.model` files are headerless: `nz` blocks of `ny`
+ASCII integers. Reference `.model` files are headerless: `nz` blocks of `ny`
 lines × `nx` values (legacy loader: `reshape(nz, ny, nx).transpose(2,1,0)` →
 `[x][y][z]`). (The documented `.mat` variant adds an `X Y Z` header line.)
 Material 0 / undefined material = "outside world": the mesher does not mesh it.

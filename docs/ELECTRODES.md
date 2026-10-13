@@ -1,10 +1,13 @@
 # Electrode design and registration
 
-*NeuroAM Studio v0.2 — `neuroam.geometry`, `neuroam.frames`, `neuroam.electrodes`*
+This guide covers `neuroam.geometry`, `neuroam.frames`, and
+`neuroam.electrodes`: physical electrode geometry, anatomical placement,
+electrical terminals, sparse overlays, and registration quality control.
 
-## The problem this replaces
+## Why geometry-based electrodes
 
-Until now a new electrode was created by editing the voxel array by hand:
+A traditional workflow creates a new electrode by editing the voxel array by
+hand:
 
 ```matlab
 % New Project/Modify_model.m
@@ -22,7 +25,7 @@ dlmwrite('RatCC_full_..._Ring_Res_166um.model', reshape(model_new, ny*nz, nx), '
 and then wiring it up by patching the `.in` file (`IN_editor_2.py`), which
 picks the terminal node as *the middle element of `np.argwhere(model == label)`*.
 
-Four things go wrong with that, and all four are things we have actually hit:
+This approach introduces four recurring limitations:
 
 | Failure | Consequence |
 |---|---|
@@ -31,9 +34,9 @@ Four things go wrong with that, and all four are things we have actually hit:
 | The terminal node is chosen by scan order | In `Models/with retina/sample.in` the declared ground node `(418, 388, 484)` is **not in the 102 electrode at all** — the current returned through whatever tissue was at that node |
 | Every montage is a full copy of the anatomy | 862 MB per montage at 83 µm, 6.9 GB at 41.5 µm; seven montages of the same rat head |
 
-v0.2 addresses each: electrodes are millimetre geometry, placed in an
-anatomical frame, connected through an explicit terminal model, stored as a
-sparse overlay, and checked before they are ever solved.
+NeuroAM instead represents an electrode as millimetre-scale geometry in an
+anatomical frame. Each contact has an explicit terminal model, is stored as a
+sparse overlay, and passes registration checks before solution.
 
 ---
 
@@ -91,7 +94,7 @@ frame.place(sdf, r_mm=..., theta_deg=..., phi_deg=...)        # anything, anywhe
 ```
 
 `theta_deg` slides an electrode from the corneal apex (0°) toward the equator
-(90°) — which is the parameter a montage study actually wants to sweep, and
+(90°). This is the parameter a montage study normally varies, and
 the one index loops cannot express.
 
 For non-spherical surfaces there are surface operators:
@@ -155,7 +158,7 @@ mont = Montage("CLring_JGND", [
 
 print(mont.report())
 mont.save("out/")                      # CLring_JGND.overlay.npz + .montage.json
-mont.write_legacy(model, "out/")       # bake .model/.in for the lab mesher
+mont.write_legacy(model, "out/")       # bake compatible .model/.in files
 ```
 
 One 83 µm anatomy plus *n* overlays of a few tens of kB replaces *n* × 862 MB
@@ -170,14 +173,15 @@ a second region as an insulating backing (label 110 by default).
 
 `register()` returns an `ElectrodeQC` per electrode, and the pipeline writes it
 into `run_manifest.json`. It reports painted volume, exposed surface area,
-connected pieces, **which tissues the electrode actually touches and over how
+connected pieces, **which tissues the electrode touches and over how
 much area**, overlap with other electrodes, and whether the terminal node is
 genuinely inside the body it claims to drive. `qc.charge_density(I, pw)` gives
 µC/cm²/phase for a safety check.
 
 Warnings that fire automatically:
 
-- terminal node is not a node of this electrode *(the `sample.in` bug)*
+- terminal node is not a node of this electrode *(the invalid `sample.in`
+  terminal case)*
 - electrodes share voxels — they are shorted
 - several electrically separate pieces, only one of which a `node` terminal drives
 - fewer voxels painted than `min_voxels` — usually a units or placement error
@@ -230,7 +234,7 @@ gate a batch of montages in CI.
 v0.1 configs still load unchanged: entries with `shape` keep using the old
 voxel-index primitives.
 
-## 7. Validation against the existing contact-lens ring
+## 7. Validation against a reference contact-lens montage
 
 The montage's contact-lens electrode was reverse-engineered from
 `RatCC_full_CLStim_JGND_912_900_504_Ring_Res_83um_with_retina.model`: it is a
@@ -238,21 +242,21 @@ The montage's contact-lens electrode was reverse-engineered from
 **2.001 ± 0.008 mm** anterior of the globe centre — i.e. on the r = 3.36 mm eye
 surface at **53.3°** from the corneal apex — with a wire radius of ≈ 0.12 mm.
 
-`frame.ring(3.360, 53.3, 0.12)` reproduces it with:
+The current lattice-aware fit reproduces the reference contacts with:
 
-| metric | value |
-|---|---|
-| voxels | 1,289 designed vs 1,144 existing |
-| IoU | 0.51 |
-| max surface separation | **1.41 voxels (117 µm)** |
-| truth-only voxels within 1 voxel of the design | 96.3 % |
+| Contact | Dice overlap | Generated / reference voxels |
+|---|---:|---:|
+| Contact-lens ring | 0.893 | 1,256 / 1,144 |
+| Return lead | 0.975 | 1,920 / 1,888 |
+| Lead insulation | 0.952 | 4,128 / 3,936 |
 
-The modest IoU is a surface-to-volume artefact, not a placement error: the
-ring is only ~3 voxels thick, so a ±½-voxel disagreement along its whole
-surface costs most of the overlap. The two rings never separate by more than
-1.4 voxels anywhere, and >94 % of the disagreement is a one-voxel skin.
+Only 736 of 6,336,000 crop voxels (0.012%) receive a different material
+assignment. Over retinal voxels whose materials match, current-density
+magnitude correlates at 0.948 and integrated retinal dose differs by 3.4%.
+See [Verification and validation](VALIDATION.md#electrode-registration) for
+the interpretation and reproduction boundary.
 
-## 8. Does it matter? Field results on the real montage
+## 8. Effect on solved fields
 
 Solved on the RatCC 83 µm eye crop (6.44 M unknowns), retina = label 77:
 
@@ -264,7 +268,7 @@ Solved on the RatCC 83 µm eye crop (6.44 M unknowns), retina = label 77:
 | D | `frame.ring(3.360, 40.0°, 0.12)` | supernode | 1.7092e4 | 666.4 | 1624 |
 | E | `frame.cap(3.360, 30°, 0.15)` | supernode | 1.6567e4 | 778.9 | 1630 |
 
-Three things to take from this:
+The comparison supports three conclusions:
 
 1. **The parametric ring is a faithful drop-in.** C differs from the
    hand-painted electrode by 0.3 % in retina E_mean and 0.6 % in impedance.
@@ -272,12 +276,12 @@ Three things to take from this:
    by 1.5e-4 relative — the metal body was already equipotential — but removes
    the stiff 1e-7 Ω·m resistors from the system and cuts the solve from 588 s
    to 375 s.
-3. **Electrode placement is worth sweeping.** 13° of ring position is 6 % of
-   retina dose and 21 % of access impedance; the intuitive "bigger electrode"
-   (E, 65 % more exposed area) is the *worst* of the three at delivering field
-   to the retina.
+3. **Placement is a consequential model parameter.** A 13° change in ring
+   position changes mean retinal field by approximately 6% and access
+   impedance by 21%. In this comparison, greater exposed area alone does not
+   predict greater retinal field.
 
-Details in `docs/VALIDATION.md`.
+Details are reported in [Verification and validation](VALIDATION.md).
 
 ## 9. Limits
 
@@ -294,10 +298,7 @@ Details in `docs/VALIDATION.md`.
 
 ---
 
-## 10. Addendum (v0.2.1): arcs, surface addresses, portable montages
-
-Added while porting the TES-GPS and VIRON clinical electrodes onto RatCC —
-see [`CLINICAL_ELECTRODES.md`](CLINICAL_ELECTRODES.md).
+## 10. Arcs, surface addresses, and portable montages
 
 **`Frame.arc`** — the open-arc counterpart of `Frame.ring`. A thread electrode
 (DTL / OkuEl class) contacts an *arc* of the limbus, not a closed loop, and a
@@ -345,16 +346,16 @@ you exactly which contacts the model could not host.
 ring at θ = 53.3° is therefore ~20° *inside* the limbus, on the mid-cornea, not
 at it.
 
-**Eye-frame azimuth convention** (RatCC, derived from tissue profiles; confirm
-on the full head model): φ = 45° superior, 135° nasal/rostral, 225° inferior,
-315° temporal/caudal. See `CLINICAL_ELECTRODES.md` §4.
+**Eye-frame azimuth convention.** For any transferred montage, derive and
+record the anatomical meaning of azimuth from the complete labelled anatomy.
+Do not assume that an axis convention inferred from one crop transfers to a
+different model.
 
 ## 11. Fitting existing electrodes back into specs
 
-A lab montage usually exists first as **hand-painted voxels**, not as a spec.
-Turning it into one is what makes it reusable across resolutions and species,
-and is how the numbers in [`AM_VERIFICATION.md`](AM_VERIFICATION.md) were
-produced.
+A reference montage may exist first as **hand-painted voxels**, rather than as
+a geometric specification. Fitting converts it into a representation that can
+be inspected and regenerated across compatible resolutions and anatomies.
 
 ```python
 from neuroam.electrodes import fit_spherical_band, fit_tube_path, refine_by_dice, dice, compare_masks
@@ -395,12 +396,12 @@ best, best_dice = refine_by_dice(reference_mask, build, info, sweep={
 voxel counts) are the same metrics used to score a fit or to check a
 regenerated electrode against the reference it was fitted from.
 
-**Authoring lattice.** Lab electrodes are frequently hand-drawn on a coarser
-lattice than the model — e.g. every voxel decision made at 166 µm inside an
+**Authoring lattice.** Reference electrodes may be hand-drawn on a coarser
+lattice than the model—for example, when every voxel decision is made at 166 µm inside an
 83 µm model, so each 2×2×2 block is uniformly filled. Reproducing a montage
 drawn this way needs `rasterize(..., lattice=2)` (equivalently
 `ElectrodeSpec(..., lattice=2)`): the region is evaluated on a lattice that
 many times coarser and the result expanded back, rather than supersampled at
-full resolution — matching this authoring grid is worth a large jump in Dice
-against the original voxels (see `AM_VERIFICATION.md`). Because regions are
+full resolution. Matching this authoring grid substantially improves overlap
+against the original voxels. Because regions are
 mm-native, no parameter rescaling is needed; only the evaluation grid changes.

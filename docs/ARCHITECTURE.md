@@ -1,29 +1,28 @@
-# NeuroAM Studio — Architecture
+# Architecture
 
-A high-level map of the system: what it does, how the pieces fit, and why
-the boundaries are where they are. For file-format specifics see
-[FORMATS.md](FORMATS.md); for what's validated and how, see
-[VALIDATION.md](VALIDATION.md)/[AM_VERIFICATION.md](AM_VERIFICATION.md); for
-the full implementation walkthrough, see [DESIGN.md](DESIGN.md).
+This page describes the system boundaries, data flow, and reuse strategy. See
+[Legacy file formats](FORMATS.md) for interoperability details,
+[Verification and validation](VALIDATION.md) for numerical evidence, and
+[Detailed design](DESIGN.md) for the implementation walkthrough.
 
 ## What this is
 
-NeuroAM Studio solves the **Admittance Method (AM)** bioelectric field
-equations on voxel anatomy (a resistor-network discretization: 12 edge
-resistors per voxel, corner nodes as unknowns), couples the result into
-**NEURON** compartmental models via extracellular potential playback, and
-visualizes all of it — from whole-head context down to per-compartment
-membrane voltage over time. It is a from-scratch, direct-assembly
-reimplementation of a legacy C++/MATLAB/hoc toolchain (Cela/Lazzi BEML
-lineage), built to be **legacy-file-compatible** (reads/writes the same
-`.in`/`.model`/`.mrm`/`.net`/`.vof`/`.v` formats) without depending on any of
-the original binaries.
+NeuroAM Studio solves the **Admittance Method (AM)** bioelectric-field
+equations on voxel anatomy. The discretization represents each voxel with 12
+edge resistors and uses corner potentials as unknowns. The resulting
+extracellular potential can be sampled at neuronal compartments and applied to
+**NEURON** models, linking whole-anatomy fields to time-resolved membrane
+response.
 
-The core discipline that shapes every design decision here: **solve once,
-reuse** — a field solve is the expensive step (minutes to tens of minutes on
-a real head model), so nothing downstream (a new electrode, a new neuron
-placement, a new question about an existing result) should force a re-solve
-if the answer is already sitting on disk.
+The implementation assembles sparse systems directly while retaining
+interoperability with established `.in`, `.model`, `.mrm`, `.net`, `.vof`,
+and `.v` files. Existing data can therefore be evaluated without requiring
+the programs that originally produced those files.
+
+The central architectural principle is **solve once, reuse**. Field solution
+is the expensive stage, so cached basis fields and saved run results allow
+waveform changes, neuronal placements, and visualization changes to reuse an
+existing solution whenever the governing field problem is unchanged.
 
 ## Mental model — one pipeline, entered at different points
 
@@ -64,12 +63,11 @@ flowchart LR
     end
 ```
 
-Every stage also has a **config-driven** entry point
-(`neuroam.pipeline.run`, `python -m neuroam run config.json`) that chains
-1→5 from a JSON spec (ASCENT-style), plus a **CLI** (`neuroam
-run/info/validate/view`) and a **library API** — the example scripts in
-`examples/` call the library directly, which is the intended way to script
-anything the CLI/pipeline doesn't cover.
+The configuration entry point (`neuroam.pipeline.run` or
+`python -m neuroam run config.json`) chains anatomy, electrode registration,
+solution, field processing, and optional coupling from one versioned JSON
+document. The command-line interface supports common operations, while the
+Python API and examples support custom analyses.
 
 ## Package map
 
@@ -97,16 +95,15 @@ anything the CLI/pipeline doesn't cover.
 
 ## Two assembly paths, one invariant
 
-`assemble_uniform` (every voxel, vectorized) and `assemble_mrm` (the lab
-mesher's variable-size blocks) are independent code paths that **must**
-produce identical systems on an all-size-1 mesh — this is enforced by test
-(`test_mrm_size1_equals_uniform`), not just asserted in a comment. The
-multires path is what makes a 912×900×504 (≈414M voxel) full-head model
-solvable at all (25.1M unknowns instead of ~415M), at the cost of most
-lattice points not being real degrees of freedom — which is exactly what
-`fill_hanging_nodes` (a per-block trilinear reconstruction, parallelized
-across block sizes) exists to repair before any gradient/field
-post-processing.
+`assemble_uniform` and `assemble_mrm` are independent code paths. They produce
+equivalent systems when every multiresolution cell has size one, an invariant
+covered by `test_mrm_size1_equals_uniform`. For a representative
+912×900×504 full-head model, multiresolution meshing reduces the system from
+approximately 415 million full-grid nodes to 25.1 million unknowns.
+
+Because most full-resolution lattice points are not degrees of freedom in a
+multiresolution solve, `fill_hanging_nodes` performs a per-block trilinear
+reconstruction before gradients or field quantities are computed.
 
 ## Terminals: three ways to be an electrode
 
@@ -124,24 +121,20 @@ electrode, not per model:
 
 ## Caching: two different jobs, not one mechanism
 
-- **`ResultCache`** (`cache.py`) — an internal, content-hash-keyed
-  performance shortcut. Nobody hands this to a colleague; it exists so a
-  second question about the same model+electrode config doesn't repeat a
-  15–20 minute solve.
+- **`ResultCache`** (`cache.py`) — a content-addressed performance cache that
+  prevents an unchanged model and electrode configuration from being solved
+  repeatedly.
 - **`.vof`** (`fields.write_vof`/`read_vof`) — the actual portable
-  deliverable: the legacy node-voltage format, readable by this project or
-  any of the lab's other tools, independent of any particular neuron
+  interchange format: a portable node-voltage representation, independent of
+  any particular neuron
   placement. At full-head scale (~25M nodes) this is a genuinely large file
-  (~650 MB) — `write_vof` is vectorized (numpy string ops, one bulk write)
-  specifically because that scale doesn't tolerate a per-row Python loop.
+  (~650 MB); `write_vof` therefore uses vectorized formatting and bulk output.
 - **`NeuronRunResult`** (`neuron_link.save_neuron_run`/`load_neuron_run`) —
   the NEURON-side equivalent: every segment's Vm at every recorded step,
-  the registered geometry, and a field crop around the cell, bundled so a
-  *different question about an existing run* (a different color scale, a
-  different time window, per-branch spike timing) never needs NEURON or the
-  AM solver again. A *different* stimulus/placement/model is a new run —
-  this bundle answers questions about one run, it doesn't parameterize new
-  ones.
+  the registered geometry, and a field crop around the cell. The bundle
+  supports later analysis of the same run without loading NEURON or repeating
+  the AM solve. A different stimulus, placement, or model constitutes a new
+  run.
 
 ## NEURON coupling and the constraints that shaped it
 
@@ -154,7 +147,7 @@ electrode, not per model:
   (`Frame.eye`+globe center) — not a fixed orientation carried over from
   the source reconstruction.
 - **One hoc-templated cell per process.** `load_hoc_cell` builds a cell by
-  running the lab's own `makecell.hoc` (`Import3d_SWC_read` + region
+  running a `makecell.hoc` workflow (`Import3d_SWC_read` + region
   biophysics); a hoc `begintemplate`/`obfunc` cannot be redefined in the
   same process, so two cells built from the same script (e.g. the D1/A2i
   sibling pair) must run in separate processes — `load_hoc_cell` detects
@@ -179,21 +172,19 @@ rotate sliders restyle the neuron trace live in the browser; nothing calls
 back to Python, and the payoff is a printed, copy-pasteable
 `place_aligned(...)` call once a placement looks right.
 
-## Testing philosophy
+## Testing strategy
 
-107 tests, organized by what they guarantee rather than by module:
-analytical closed-forms (point source, layered slab, current conservation)
-independent of any legacy reference; legacy equivalence (assembly vs.
-parsed netlist, uniform vs. size-1 multires, and — when `NEUROAM_REFDATA`
-points at the lab's own `Sph_80` reference model — assembly vs. the lab
-mesher's actual `.mrm`); round-trip I/O for every file format; and,
-increasingly, real anatomical validation against the lab's own precomputed
-results (`docs/AM_VERIFICATION.md`, `docs/VALIDATION.md`). See
-[VALIDATION.md](VALIDATION.md) for the actual numbers.
+Tests are organized by the guarantee they provide: analytic closed-form
+checks, system equivalence, file-format round trips, electrode registration,
+field-to-cell coupling, and optional integrations. Tests that require
+separately distributed reference datasets are selected through environment
+variables and are skipped when those datasets are unavailable. The current
+test snapshot and all reported numerical results are documented in
+[Verification and validation](VALIDATION.md).
 
-## Deliberate limits (see [PLAN.md](PLAN.md) for the roadmap)
+## Scope
 
-Resistive/quasi-static only; the multiresolution *mesher* is consumed, not
-reimplemented (`.mrm` comes from the lab's `mesher.exe`); workstation-scale
-(chunked assembly for ~1e8 voxels, not distributed); CLI viewer is PyVista,
-not a full experiment-building GUI.
+The current solver is resistive and quasi-static. It consumes, but does not
+generate, multiresolution meshes and targets workstation-scale in-memory
+problems rather than distributed solution. See
+[Scope and limitations](LIMITATIONS.md) for the full interpretation boundary.

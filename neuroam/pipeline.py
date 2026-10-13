@@ -1,4 +1,4 @@
-"""ASCENT-style config-driven pipeline.
+"""Configuration-driven NeuroAM pipeline.
 
 A single versioned JSON config describes model, materials, electrodes,
 waveforms, solve options, outputs, and (optionally) NEURON coupling.  The

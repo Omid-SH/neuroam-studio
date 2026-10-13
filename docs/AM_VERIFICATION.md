@@ -1,5 +1,11 @@
 # AM verification — electrode placement & visualization (rat eye, 83 µm)
 
+> **Historical record.** This page preserves the original electrode study for
+> provenance and is not part of the public documentation build. Its maintained
+> results have been consolidated into
+> [Verification and validation](VALIDATION.md#electrode-registration). When
+> values differ, the consolidated validation page is authoritative.
+
 Answers the question "if NeuroAM places the SCL and J electrodes itself on the
 raw rat head model, does it reproduce the lab's hand-built SCL–J model?"
 

@@ -1,5 +1,12 @@
 # Clinical electrodes: TES-GPS and VIRON on the rat head model
 
+> **Exploratory research record.** This protocol-mapping notebook is retained
+> for provenance and is not part of the public documentation build. It contains
+> literature-derived assumptions, crop-specific substitutions, and unfinished
+> validation work. It is not a clinical recommendation. The maintained public
+> electrode documentation is [Electrode design and registration](ELECTRODES.md),
+> with interpretation boundaries in [Scope and limitations](LIMITATIONS.md).
+
 *NeuroAM Studio — extracted 2026-09-01. Machine-readable parameter record:
 `configs/clinical_electrode_parameters.json`. Rat instantiations:
 `configs/ratcc_tes_gps.json`, `configs/ratcc_viron_periorbital.json`,

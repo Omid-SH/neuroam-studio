@@ -8,7 +8,7 @@ Core objects:
 - :func:`neuroam.solver.solve` / :func:`neuroam.solver.solve_basis` — fields
 - :mod:`neuroam.fields` — E, J, exports, ROI dose metrics
 - :mod:`neuroam.coupling` / :mod:`neuroam.neuron_link` — field-to-NEURON
-- :func:`neuroam.pipeline.run` — JSON-config pipeline (ASCENT-style)
+- :func:`neuroam.pipeline.run` — versioned JSON configuration pipeline
 """
 
 __version__ = "0.4.0"

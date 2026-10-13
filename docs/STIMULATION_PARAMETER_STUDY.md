@@ -1,5 +1,11 @@
 # Placement, Orientation, Amplitude, and Waveform — A Parameter Study
 
+> **Exploratory research record.** This page is retained for provenance and is
+> not part of the public documentation build. It describes a small, model-bound
+> neuronal exploration and must not be interpreted as a clinical threshold,
+> efficacy, or safety study. See [Verification and validation](VALIDATION.md)
+> and [Scope and limitations](LIMITATIONS.md) for the maintained public record.
+
 216 trials (108 per cell type: D1, A2i) across 5 stages, run against the
 6 already-solved RatCC fields. Reproduce with `examples/
 31_stimulation_parameter_sweep.py {d1,a2i}`; raw data in `examples/out/
